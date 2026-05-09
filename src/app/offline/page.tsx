@@ -8,7 +8,7 @@ export default function OfflinePage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4 py-8">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 text-center">
-          {/* Icône hors ligne */}
+          {/* Icône hors ligne  */}
           <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Wifi size={40} className="text-white" />
           </div>
