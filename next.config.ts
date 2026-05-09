@@ -1,17 +1,98 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  allowedDevOrigins: ['https://factura-cm.vercel.app/s','192.168.1.125', '192.168.217.172', 'localhost', '127.0.0.1'],
-  turbopack: {},
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+async function handler(request: NextRequest) {
+  const response = NextResponse.next({ request })
+  const path = request.nextUrl.pathname
+
+  const isPublicRoute =
+    path === '/' ||
+    path.startsWith('/api') ||
+    path.startsWith('/favicon') ||
+    path.startsWith('/manifest') ||
+    path.startsWith('/icon') ||
+    path.startsWith('/offline') ||
+    path.startsWith('/sw.js') ||
+    path.startsWith('/workbox')
+
+  if (isPublicRoute) return response
+
+  const isAuthRoute = path === '/login' || path === '/register'
+  const isProtectedRoute =
+    path.startsWith('/dashboard') ||
+    path.startsWith('/clients') ||
+    path.startsWith('/factures') ||
+    path.startsWith('/devis') ||
+    path.startsWith('/upgrade') ||
+    path.startsWith('/onboarding') ||
+    path.startsWith('/profil') ||
+    path.startsWith('/settings') ||
+    path.startsWith('/notifications')
+  const isAdminRoute = path.startsWith('/admin')
+
+  if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    if (isProtectedRoute || isAdminRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return response
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    })
+
+    await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && isProtectedRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    if (user && isAuthRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    if (isAdminRoute && (!user || user.email !== process.env.ADMIN_EMAIL)) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  } catch (error) {
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  return response
 }
 
-// PWA seulement en production
-if (process.env.NODE_ENV === 'production') {
-  const withPWA = require('next-pwa')({
-    dest: 'public',
-    register: true,
-    skipWaiting: true,
-  })
-  module.exports = withPWA(nextConfig)
-} else {
-  module.exports = nextConfig
+// Export les deux noms — compatibilité Next.js 15 et 16
+export const middleware = handler
+export const proxy = handler
+
+export const config = {
+  matcher: [
+    '/dashboard/:path*',
+    '/clients/:path*',
+    '/factures/:path*',
+    '/devis/:path*',
+    '/upgrade/:path*',
+    '/onboarding/:path*',
+    '/profil/:path*',
+    '/settings/:path*',
+    '/notifications/:path*',
+    '/admin/:path*',
+    '/login',
+    '/register',
+  ],
 }
