@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
@@ -9,7 +9,6 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     path === '/' ||
     path.startsWith('/api') ||
-    path.startsWith('/_next') ||
     path.startsWith('/favicon') ||
     path.startsWith('/manifest') ||
     path.startsWith('/icon') ||
@@ -32,7 +31,6 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/notifications')
   const isAdminRoute = path.startsWith('/admin')
 
-  // Vérifier session uniquement si nécessaire
   if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
 
   const supabase = createServerClient(
