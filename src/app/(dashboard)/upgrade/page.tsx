@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CheckCircle, Zap, MessageCircle, Crown, Star, Shield } from 'lucide-react'
+import { PRO_MONTHLY_FCFA } from '@/lib/constants'
+import UpgradeNotifyAdminButton from '@/components/upgrade/UpgradeNotifyAdminButton'
 
 const FREE_FEATURES = [
   '5 factures par mois',
@@ -59,7 +61,7 @@ export default async function UpgradePage() {
   }
 
   const whatsappMessage = encodeURIComponent(
-    `Bonjour, je souhaite passer en Pro sur FACTURA.\n\nEmail du compte : ${profile?.email || user.email}\nEntreprise : ${profile?.company_name || ''}\n\nJe vais effectuer le paiement de 2 500 FCFA.`
+    `Bonjour, je souhaite passer en Pro sur FACTURA.\n\nEmail du compte : ${profile?.email || user.email}\nEntreprise : ${profile?.company_name || ''}\n\nJe vais effectuer le paiement de ${PRO_MONTHLY_FCFA.toLocaleString('fr-FR')} FCFA.`
   )
 
   const whatsappUrl = `https://wa.me/237620187495?text=${whatsappMessage}`
@@ -135,7 +137,9 @@ export default async function UpgradePage() {
                 <p className="font-semibold text-white text-xl">Pro</p>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-white">2 500</span>
+                <span className="text-4xl font-bold text-white">
+                  {PRO_MONTHLY_FCFA.toLocaleString('fr-FR')}
+                </span>
                 <span className="text-blue-200 text-lg">FCFA / mois</span>
               </div>
               <p className="text-blue-200 text-sm mt-1">ou 5 USD / mois</p>
@@ -173,26 +177,26 @@ export default async function UpgradePage() {
               </div>
               <div>
                 <p className="font-semibold text-slate-900 text-sm">
-                  Effectuez le virement de 2 500 FCFA
+                  Effectuez le virement de {PRO_MONTHLY_FCFA.toLocaleString('fr-FR')} FCFA
                 </p>
                 <div className="mt-2 space-y-2">
-                  <div className="flex items-center justify-between bg-orange-50 border
-                                border-orange-100 rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between bg-yellow-50 border
+                                border-yellow-100 rounded-xl px-4 py-3">
                     <div>
-                      <p className="text-xs text-orange-600 font-medium">MTN Mobile Money</p>
+                      <p className="text-xs text-yellow-700 font-medium">MTN Mobile Money</p>
                       <p className="text-base font-bold text-slate-900 mt-0.5">
                         +237 679997956
                       </p>
                     </div>
-                    <div className="w-8 h-8 bg-orange-400 rounded-lg flex items-center
+                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center
                                     justify-center text-white text-xs font-bold">
                       MTN
                     </div>
                   </div>
-                  <div className="flex items-center justify-between bg-yellow-50 border
-                                border-yellow-100 rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between bg-orange-50 border
+                                border-orange-100 rounded-xl px-4 py-3">
                     <div>
-                      <p className="text-xs text-yellow-700 font-medium">Orange Money</p>
+                      <p className="text-xs text-orange-600 font-medium">Orange Money</p>
                       <p className="text-base font-bold text-slate-900 mt-0.5">
                         +237 691093420
                       </p>
@@ -242,6 +246,8 @@ export default async function UpgradePage() {
             </div>
           </div>
         </div>
+
+        <UpgradeNotifyAdminButton />
 
         {/* CTA WhatsApp premium */}
         <section className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 shadow-xl">

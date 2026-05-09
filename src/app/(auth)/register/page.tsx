@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/types/database.types'
+import { sendWelcomeEmailAction } from '@/app/actions/email'
 
 const ds = {
   color: {
@@ -43,6 +43,8 @@ type FieldProps = {
   autoComplete?: string
   error?: string
   onChange: (value: string) => void
+  showPasswordToggle?: boolean
+  onPasswordToggle?: () => void
 }
 
 function Field({
@@ -53,34 +55,78 @@ function Field({
   autoComplete,
   error,
   onChange,
+  showPasswordToggle,
+  onPasswordToggle,
 }: FieldProps) {
   return (
     <div className="space-y-2.5">
       <label className="block text-sm font-medium" style={{ color: ds.color.textSecondary }}>
         {label}
       </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        aria-invalid={!!error}
-        className="w-full rounded-xl border px-4 py-3 text-[15px] outline-none transition-colors"
-        style={{
-          backgroundColor: ds.color.card,
-          borderColor: error ? ds.color.danger : ds.color.border,
-          color: ds.color.textPrimary,
-        }}
-        onFocus={(event) => {
-          event.currentTarget.style.borderColor = ds.color.borderFocus
-          event.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)'
-        }}
-        onBlur={(event) => {
-          event.currentTarget.style.borderColor = error ? ds.color.danger : ds.color.border
-          event.currentTarget.style.boxShadow = 'none'
-        }}
-      />
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          aria-invalid={!!error}
+          className="w-full rounded-xl border px-4 py-3 text-[15px] outline-none transition-colors pr-12"
+          style={{
+            backgroundColor: ds.color.card,
+            borderColor: error ? ds.color.danger : ds.color.border,
+            color: ds.color.textPrimary,
+          }}
+          onFocus={(event) => {
+            event.currentTarget.style.borderColor = ds.color.borderFocus
+            event.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)'
+          }}
+          onBlur={(event) => {
+            event.currentTarget.style.borderColor = error ? ds.color.danger : ds.color.border
+            event.currentTarget.style.boxShadow = 'none'
+          }}
+        />
+        {showPasswordToggle && (
+          <button
+            type="button"
+            onClick={onPasswordToggle}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+            style={{ color: ds.color.textMuted }}
+          >
+            {type === 'password' ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
       {error ? (
         <p className="text-xs" style={{ color: ds.color.danger }}>
           {error}
@@ -118,6 +164,7 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const fieldErrors = useMemo(() => {
     if (!error) {
@@ -198,19 +245,12 @@ export default function RegisterPage() {
         return
       }
 
-      // Envoyer email de bienvenue
-      try {
-        await fetch('/api/email/welcome', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: form.email.trim(),
-            name: form.full_name.trim() || form.company_name.trim(),
-          }),
-        })
-      } catch (emailError) {
-        console.error('Erreur envoi email bienvenue:', emailError)
-        // Ne pas bloquer l'inscription si l'email échoue
+      const welcomeResult = await sendWelcomeEmailAction(
+        form.email.trim(),
+        form.full_name.trim() || form.company_name.trim()
+      )
+      if (!welcomeResult.ok) {
+        console.error('Email bienvenue:', welcomeResult.error)
       }
 
       const { data: profileData } = await supabase
@@ -293,12 +333,14 @@ export default function RegisterPage() {
 
             <Field
               label="Mot de passe"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={form.password}
               onChange={(value) => setField('password', value)}
               placeholder="8 caracteres minimum"
               autoComplete="new-password"
               error={fieldErrors.password}
+              showPasswordToggle
+              onPasswordToggle={() => setShowPassword(!showPassword)}
             />
 
             <div className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: '#DBEAFE', color: ds.color.textMuted }}>

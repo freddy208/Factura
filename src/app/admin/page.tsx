@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import AdminActivateButton from '@/components/admin/AdminActivateButton'
-import { Users, CheckCircle, Clock, TrendingUp, Shield } from 'lucide-react'
+import { Users, CheckCircle, Clock, Shield } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -72,10 +72,6 @@ export default async function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <p className="text-3xl font-bold text-slate-900">{totalUsers}</p>
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <TrendingUp size={12} />
-              <span>+12%</span>
-            </div>
           </div>
         </div>
 

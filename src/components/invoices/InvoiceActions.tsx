@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Download, Send, CheckCircle, ArrowRight, Trash2 } from 'lucide-react'
-import Link from 'next/link'
+import { usePremiumModal } from '@/hooks/usePremiumModal'
 
 export default function InvoiceActions({
   invoice,
@@ -14,38 +14,74 @@ export default function InvoiceActions({
   isPro: boolean
 }) {
   const [loading, setLoading] = useState<string | null>(null)
+  const { alert, confirm, setLoading: setModalLoading, ModalComponent } = usePremiumModal()
 
   async function updateStatus(status: string) {
     setLoading(status)
     const supabase = createClient()
-    await (supabase.from('invoices') as any)
+    const { error } = await (supabase.from('invoices') as any)
       .update({ status })
       .eq('id', invoice.id)
+    setLoading(null)
+    if (error) {
+      await alert('Erreur', error.message || 'Impossible de mettre à jour le statut.', 'danger')
+      return
+    }
     window.location.reload()
   }
 
   async function handleDelete() {
-    if (!confirm('Supprimer cette facture ? Action irréversible.')) return
+    const confirmed = await confirm(
+      'Supprimer la facture',
+      'Supprimer cette facture ? Cette action est irréversible.',
+      'danger',
+      { confirmText: 'Supprimer', cancelText: 'Annuler' }
+    )
+    if (!confirmed) return
+    
     setLoading('delete')
+    setModalLoading(true)
     const supabase = createClient()
-    await supabase.from('invoices').delete().eq('id', invoice.id)
+    const { error } = await supabase.from('invoices').delete().eq('id', invoice.id)
+    setLoading(null)
+    setModalLoading(false)
+    if (error) {
+      await alert('Erreur', error.message || 'Suppression impossible.', 'danger')
+      return
+    }
     window.location.href = invoice.type === 'invoice' ? '/factures' : '/devis'
   }
 
   async function handleConvert() {
     if (!isPro) {
-      alert('La conversion devis → facture est une fonctionnalité Pro.')
+      await alert(
+        'Fonctionnalité Pro',
+        'La conversion devis → facture est une fonctionnalité réservée aux abonnés Pro.',
+        'warning'
+      )
       return
     }
     setLoading('convert')
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      setLoading(null)
+      await alert('Session expirée', 'Votre session a expiré. Veuillez vous reconnecter.', 'warning')
+      return
+    }
 
-    const { data: number } = await (supabase
+    const { data: number, error: numErr } = await (supabase
       .rpc('generate_invoice_number', { p_user_id: user.id, p_type: 'invoice' } as any) as any)
 
-    const { data: newInvoice } = await (supabase
+    if (numErr) {
+      console.error(numErr)
+      await alert('Erreur de numérotation', numErr.message || 'Erreur de numérotation.', 'danger')
+      setModalLoading(false)
+      setLoading(null)
+      return
+    }
+
+    const { data: newInvoice, error: invErr } = await (supabase
       .from('invoices')
       .insert({
         user_id: user.id,
@@ -66,20 +102,31 @@ export default function InvoiceActions({
       .select()
       .single() as any)
 
-    if (newInvoice) {
-      // Copier les lignes
-      const items = invoice.invoice_items?.map((item: any) => ({
-        invoice_id: newInvoice.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total: item.total,
-        position: item.position,
-      })) || []
-
-      await (supabase.from('invoice_items') as any).insert(items)
-      window.location.href = `/factures/${(newInvoice as any).id}`
+    if (invErr || !newInvoice) {
+      await alert('Erreur de création', invErr?.message || 'Impossible de créer la facture.', 'danger')
+      setModalLoading(false)
+      setLoading(null)
+      return
     }
+
+    const items = invoice.invoice_items?.map((item: any) => ({
+      invoice_id: newInvoice.id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total: item.total,
+      position: item.position,
+    })) || []
+
+    const { error: itemsErr } = await (supabase.from('invoice_items') as any).insert(items)
+    if (itemsErr) {
+      await alert('Erreur de copie', itemsErr.message || 'Facture créée mais lignes non copiées.', 'warning')
+      setModalLoading(false)
+      setLoading(null)
+      return
+    }
+
+    window.location.href = `/factures/${newInvoice.id}`
     setLoading(null)
   }
 
@@ -91,13 +138,15 @@ export default function InvoiceActions({
       doc.save(`${invoice.number}.pdf`)
     } catch (err) {
       console.error('PDF error:', err)
-      alert('Erreur lors de la génération du PDF. Réessayez.')
+      await alert('Erreur PDF', 'Erreur lors de la génération du PDF. Veuillez réessayer.', 'danger')
     }
     setLoading(null)
   }
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <>
+      <ModalComponent />
+      <div className="flex flex-wrap gap-2 mb-6">
       {/* Télécharger PDF */}
       <button
         onClick={handleDownloadPDF}
@@ -172,6 +221,7 @@ export default function InvoiceActions({
         <Trash2 size={16} />
         {loading === 'delete' ? '...' : 'Supprimer'}
       </button>
-    </div>
+      </div>
+    </>
   )
 }

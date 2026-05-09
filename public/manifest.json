@@ -2,7 +2,7 @@
   "name": "Factura",
   "short_name": "Factura",
   "description": "Devis et factures professionnels en 2 minutes",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",

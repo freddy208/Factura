@@ -1,9 +1,25 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM = 'FACTURA <noreply@factura.app>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
+
+function getResend(): Resend {
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    throw new Error('RESEND_API_KEY manquante')
+  }
+  return new Resend(key)
+}
+
+/** Échappe le texte utilisateur injecté dans du HTML email. */
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 function baseTemplate(content: string) {
   return `
@@ -16,7 +32,6 @@ function baseTemplate(content: string) {
     <body style="margin:0;padding:0;background:#F9FAFB;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
       <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;
                   border:1px solid #E5E7EB;overflow:hidden;">
-        <!-- Header -->
         <div style="background:#2563EB;padding:24px 32px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="width:32px;height:32px;background:rgba(255,255,255,0.2);
@@ -27,11 +42,9 @@ function baseTemplate(content: string) {
             <span style="color:white;font-weight:bold;font-size:18px;">FACTURA</span>
           </div>
         </div>
-        <!-- Content -->
         <div style="padding:32px;">
           ${content}
         </div>
-        <!-- Footer -->
         <div style="padding:16px 32px;border-top:1px solid #F3F4F6;
                     text-align:center;">
           <p style="color:#9CA3AF;font-size:12px;margin:0;">
@@ -45,14 +58,15 @@ function baseTemplate(content: string) {
 }
 
 export async function sendWelcomeEmail(email: string, name: string) {
-  try {
-    await resend.emails.send({
-      from: FROM,
-      to: email,
-      subject: 'Bienvenue sur FACTURA 🎉',
-      html: baseTemplate(`
+  const safeName = escapeHtml(name)
+  const resend = getResend()
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'Bienvenue sur FACTURA 🎉',
+    html: baseTemplate(`
         <h2 style="color:#111827;font-size:22px;font-weight:700;margin:0 0 8px;">
-          Bienvenue ${name} 👋
+          Bienvenue ${safeName} 👋
         </h2>
         <p style="color:#6B7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
           Votre compte FACTURA est prêt. Créez votre première facture
@@ -76,19 +90,20 @@ export async function sendWelcomeEmail(email: string, name: string) {
           </p>
         </div>
       `),
-    })
-  } catch (err) {
-    console.error('sendWelcomeEmail error:', err)
+  })
+  if (error) {
+    throw new Error(error.message)
   }
 }
 
 export async function sendProActivationEmail(email: string, companyName: string) {
-  try {
-    await resend.emails.send({
-      from: FROM,
-      to: email,
-      subject: '✅ Votre compte Pro est activé !',
-      html: baseTemplate(`
+  const safeCompany = escapeHtml(companyName)
+  const resend = getResend()
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: '✅ Votre compte Pro est activé !',
+    html: baseTemplate(`
         <div style="text-align:center;margin-bottom:24px;">
           <div style="width:56px;height:56px;background:#DCFCE7;border-radius:50%;
                       display:inline-flex;align-items:center;justify-content:center;
@@ -102,7 +117,7 @@ export async function sendProActivationEmail(email: string, companyName: string)
         </h2>
         <p style="color:#6B7280;font-size:15px;line-height:1.6;
                   margin:0 0 24px;text-align:center;">
-          ${companyName}, votre compte FACTURA Pro est maintenant actif.
+          ${safeCompany}, votre compte FACTURA Pro est maintenant actif.
           Profitez de toutes les fonctionnalités sans limite.
         </p>
         <a href="${APP_URL}/dashboard"
@@ -124,9 +139,9 @@ export async function sendProActivationEmail(email: string, companyName: string)
           </p>
         </div>
       `),
-    })
-  } catch (err) {
-    console.error('sendProActivationEmail error:', err)
+  })
+  if (error) {
+    throw new Error(error.message)
   }
 }
 
@@ -135,12 +150,15 @@ export async function sendPaymentNotifToAdmin(
   companyName: string,
   adminEmail: string
 ) {
-  try {
-    await resend.emails.send({
-      from: FROM,
-      to: adminEmail,
-      subject: `💰 Nouvelle demande Pro — ${companyName}`,
-      html: baseTemplate(`
+  const safeCompany = escapeHtml(companyName)
+  const safeEmail = escapeHtml(userEmail)
+  const resend = getResend()
+  const subjectSuffix = companyName.replace(/\s+/g, ' ').replace(/[\r\n]+/g, '').slice(0, 80)
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `💰 Nouvelle demande Pro — ${subjectSuffix}`,
+    html: baseTemplate(`
         <h2 style="color:#111827;font-size:20px;font-weight:700;margin:0 0 16px;">
           Nouvelle demande de passage en Pro
         </h2>
@@ -148,11 +166,11 @@ export async function sendPaymentNotifToAdmin(
                     border:1px solid #E5E7EB;margin-bottom:24px;">
           <p style="margin:0 0 8px;font-size:14px;">
             <span style="color:#6B7280;">Entreprise :</span>
-            <strong style="color:#111827;"> ${companyName}</strong>
+            <strong style="color:#111827;"> ${safeCompany}</strong>
           </p>
           <p style="margin:0;font-size:14px;">
             <span style="color:#6B7280;">Email :</span>
-            <strong style="color:#111827;"> ${userEmail}</strong>
+            <strong style="color:#111827;"> ${safeEmail}</strong>
           </p>
         </div>
         <a href="${APP_URL}/admin"
@@ -162,9 +180,9 @@ export async function sendPaymentNotifToAdmin(
           Gérer dans l'admin panel →
         </a>
       `),
-    })
-  } catch (err) {
-    console.error('sendPaymentNotifToAdmin error:', err)
+  })
+  if (error) {
+    throw new Error(error.message)
   }
 }
 
@@ -175,30 +193,34 @@ export async function sendInvoiceSentEmail(
   total: string,
   senderCompany: string
 ) {
-  try {
-    await resend.emails.send({
-      from: FROM,
-      to: clientEmail,
-      subject: `Facture ${invoiceNumber} — ${senderCompany}`,
-      html: baseTemplate(`
+  const safeClient = escapeHtml(clientName)
+  const safeInvoice = escapeHtml(invoiceNumber)
+  const safeTotal = escapeHtml(total)
+  const safeSender = escapeHtml(senderCompany)
+  const resend = getResend()
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: clientEmail,
+    subject: `Facture ${invoiceNumber} — ${senderCompany}`,
+    html: baseTemplate(`
         <h2 style="color:#111827;font-size:20px;font-weight:700;margin:0 0 8px;">
-          Bonjour ${clientName},
+          Bonjour ${safeClient},
         </h2>
         <p style="color:#6B7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-          ${senderCompany} vous a envoyé la facture
-          <strong>${invoiceNumber}</strong> d'un montant de
-          <strong>${total}</strong>.
+          ${safeSender} vous a envoyé la facture
+          <strong>${safeInvoice}</strong> d'un montant de
+          <strong>${safeTotal}</strong>.
         </p>
         <div style="background:#F9FAFB;border-radius:12px;padding:20px;
                     border:1px solid #E5E7EB;text-align:center;">
           <p style="color:#374151;font-size:14px;margin:0 0 4px;">Montant à régler</p>
           <p style="color:#2563EB;font-size:28px;font-weight:700;margin:0;">
-            ${total}
+            ${safeTotal}
           </p>
         </div>
       `),
-    })
-  } catch (err) {
-    console.error('sendInvoiceSentEmail error:', err)
+  })
+  if (error) {
+    throw new Error(error.message)
   }
 }
