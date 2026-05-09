@@ -82,17 +82,6 @@ export const proxy = handler
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/clients/:path*',
-    '/factures/:path*',
-    '/devis/:path*',
-    '/upgrade/:path*',
-    '/onboarding/:path*',
-    '/profil/:path*',
-    '/settings/:path*',
-    '/notifications/:path*',
-    '/admin/:path*',
-    '/login',
-    '/register',
+    '/((?!_next/static|_next/image|favicon.ico|manifest|icon|sw.js|workbox|api).*)',
   ],
 }
