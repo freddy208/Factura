@@ -2,7 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 async function handler(request: NextRequest) {
-  const response = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
   const isPublicRoute =
@@ -15,7 +14,9 @@ async function handler(request: NextRequest) {
     path.startsWith('/sw.js') ||
     path.startsWith('/workbox')
 
-  if (isPublicRoute) return response
+  if (isPublicRoute) {
+    return NextResponse.next()
+  }
 
   const isAuthRoute = path === '/login' || path === '/register'
   const isProtectedRoute =
@@ -30,7 +31,9 @@ async function handler(request: NextRequest) {
     path.startsWith('/notifications')
   const isAdminRoute = path.startsWith('/admin')
 
-  if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
+  if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) {
+    return NextResponse.next()
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -39,8 +42,10 @@ async function handler(request: NextRequest) {
     if (isProtectedRoute || isAdminRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    return response
+    return NextResponse.next()
   }
+
+  const response = NextResponse.next({ request })
 
   try {
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
