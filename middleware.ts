@@ -1,21 +1,25 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-async function handler(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
-  const isPublicRoute =
+  // ── Routes publiques : aucune vérification d'auth ──
+  if (
     path === '/' ||
     path.startsWith('/api') ||
+    path.startsWith('/login') ||
+    path.startsWith('/register') ||
+    path.startsWith('/offline') ||
     path.startsWith('/favicon') ||
     path.startsWith('/manifest') ||
     path.startsWith('/icon') ||
-    path.startsWith('/offline') ||
     path.startsWith('/sw.js') ||
     path.startsWith('/workbox')
-
-  if (isPublicRoute) return response
+  ) {
+    return response
+  }
 
   const isAuthRoute = path === '/login' || path === '/register'
   const isProtectedRoute =
@@ -28,10 +32,10 @@ async function handler(request: NextRequest) {
     path.startsWith('/profil') ||
     path.startsWith('/settings') ||
     path.startsWith('/notifications')
+
   const isAdminRoute = path.startsWith('/admin')
 
-  if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
-
+  // ── Si Supabase non configuré, protège quand même les routes sensibles ──
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -45,7 +49,9 @@ async function handler(request: NextRequest) {
   try {
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value)
@@ -61,13 +67,16 @@ async function handler(request: NextRequest) {
     if (!user && isProtectedRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
+
     if (user && isAuthRoute) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+
     if (isAdminRoute && (!user || user.email !== process.env.ADMIN_EMAIL)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   } catch (error) {
+    console.error('Middleware error:', error)
     if (isAdminRoute) {
       return NextResponse.redirect(new URL('/', request.url))
     }
@@ -75,10 +84,6 @@ async function handler(request: NextRequest) {
 
   return response
 }
-
-// Export les deux noms — compatibilité Next.js 15 et 16
-export const middleware = handler
-export const proxy = handler
 
 export const config = {
   matcher: [
