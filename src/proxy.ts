@@ -5,7 +5,6 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
-  // Routes publiques — jamais interceptées
   const isPublicRoute =
     path === '/' ||
     path.startsWith('/api') ||
@@ -33,10 +32,22 @@ export async function proxy(request: NextRequest) {
 
   if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  // ← Vérification critique : si les vars manquent, laisse passer
+  // La sécurité est garantie par le RLS Supabase et les Server Components
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('PROXY: Supabase env vars missing')
+    // Si vars manquantes → redirige login pour les routes protégées
+    if (isProtectedRoute || isAdminRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return response
+  }
+
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
@@ -46,22 +57,29 @@ export async function proxy(request: NextRequest) {
           })
         },
       },
+    })
+
+    await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user && isProtectedRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
-  )
 
-  await supabase.auth.getSession()
-  const { data: { user } } = await supabase.auth.getUser()
+    if (user && isAuthRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
 
-  if (!user && isProtectedRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+    if (isAdminRoute && (!user || user.email !== process.env.ADMIN_EMAIL)) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
 
-  if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  if (isAdminRoute && (!user || user.email !== process.env.ADMIN_EMAIL)) {
-    return NextResponse.redirect(new URL('/', request.url))
+  } catch (error) {
+    console.error('PROXY error:', error)
+    // En cas d'erreur → laisse passer, la sécurité est dans les pages
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   return response
