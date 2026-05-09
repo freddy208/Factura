@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+async function handler(request: NextRequest) {
   const response = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
@@ -32,14 +32,10 @@ export async function proxy(request: NextRequest) {
 
   if (!isAuthRoute && !isProtectedRoute && !isAdminRoute) return response
 
-  // ← Vérification critique : si les vars manquent, laisse passer
-  // La sécurité est garantie par le RLS Supabase et les Server Components
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error('PROXY: Supabase env vars missing')
-    // Si vars manquantes → redirige login pour les routes protégées
     if (isProtectedRoute || isAdminRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -65,18 +61,13 @@ export async function proxy(request: NextRequest) {
     if (!user && isProtectedRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-
     if (user && isAuthRoute) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-
     if (isAdminRoute && (!user || user.email !== process.env.ADMIN_EMAIL)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
-
   } catch (error) {
-    console.error('PROXY error:', error)
-    // En cas d'erreur → laisse passer, la sécurité est dans les pages
     if (isAdminRoute) {
       return NextResponse.redirect(new URL('/', request.url))
     }
@@ -84,6 +75,10 @@ export async function proxy(request: NextRequest) {
 
   return response
 }
+
+// Export les deux noms — compatibilité Next.js 15 et 16
+export const middleware = handler
+export const proxy = handler
 
 export const config = {
   matcher: [
