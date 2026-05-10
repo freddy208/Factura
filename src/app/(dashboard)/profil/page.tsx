@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { User, Mail, Building, Calendar, Shield, Edit, Camera } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 
 type Profile = {
@@ -27,6 +27,49 @@ export default async function ProfilPage() {
   const profile = profileData as Profile | null
 
   if (!profile) redirect('/onboarding')
+
+  // Récupérer les statistiques de l'utilisateur
+  const [{ data: invoices }, { data: quotes }, { data: clients }] = await Promise.all([
+    supabase
+      .from('invoices')
+      .select('id, total, status')
+      .eq('user_id', user.id)
+      .eq('type', 'invoice'),
+    supabase
+      .from('invoices')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', 'quote'),
+    supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id),
+  ])
+
+  // Types pour les données
+  type InvoiceData = {
+    id: string
+    total: number | null
+    status: string
+  }
+
+  type QuoteData = {
+    id: string
+  }
+
+  type ClientData = {
+    id: string
+  }
+
+  // Calculer les statistiques
+  const invoiceList = invoices as InvoiceData[] | null
+  const quoteList = quotes as QuoteData[] | null
+  const clientList = clients as ClientData[] | null
+
+  const invoiceCount = invoiceList?.length ?? 0
+  const quoteCount = quoteList?.length ?? 0
+  const clientCount = clientList?.length ?? 0
+  const totalPaid = invoiceList?.filter((inv) => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total ?? 0), 0) ?? 0
 
   return (
     <div className="space-y-6">
@@ -130,19 +173,19 @@ export default async function ProfilPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
             <p className="text-xs text-blue-600 font-medium mb-2">Factures créées</p>
-            <p className="text-2xl font-bold text-blue-900">--</p>
+            <p className="text-2xl font-bold text-blue-900">{invoiceCount}</p>
           </div>
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
             <p className="text-xs text-green-600 font-medium mb-2">Devis créés</p>
-            <p className="text-2xl font-bold text-green-900">--</p>
+            <p className="text-2xl font-bold text-green-900">{quoteCount}</p>
           </div>
           <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border border-purple-100">
             <p className="text-xs text-purple-600 font-medium mb-2">Clients</p>
-            <p className="text-2xl font-bold text-purple-900">--</p>
+            <p className="text-2xl font-bold text-purple-900">{clientCount}</p>
           </div>
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-100">
             <p className="text-xs text-amber-600 font-medium mb-2">Total encaissé</p>
-            <p className="text-2xl font-bold text-amber-900">--</p>
+            <p className="text-2xl font-bold text-amber-900">{formatCurrency(totalPaid)}</p>
           </div>
         </div>
       </section>

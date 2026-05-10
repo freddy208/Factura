@@ -54,20 +54,20 @@ const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(({
 
   const inputClasses = cn(
     // Base styles
-    'w-full bg-white/90 backdrop-blur-sm border-2 transition-all duration-200 outline-none',
+    'w-full bg-white border-2 transition-all duration-200 outline-none text-gray-900 placeholder:text-gray-600',
     
     // Focus states
     isFocused && !error && 'border-blue-500 ring-2 ring-blue-500/20 ring-offset-0',
-    !isFocused && !error && 'border-slate-200/60 hover:border-slate-300/60',
+    !isFocused && !error && 'border-gray-400 hover:border-gray-500',
     
     // Error states
-    error && 'border-red-500 ring-2 ring-red-500/20 ring-offset-0',
+    error && 'border-red-500 ring-2 ring-red-500/20 ring-offset-0 text-red-900 placeholder:text-red-600',
     
     // Success states
-    success && !error && 'border-green-500 ring-2 ring-green-500/20 ring-offset-0',
+    success && !error && 'border-green-500 ring-2 ring-green-500/20 ring-offset-0 text-green-900',
     
     // Disabled state
-    disabled && 'opacity-50 cursor-not-allowed bg-slate-50',
+    disabled && 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-700',
     
     // Sizes
     size === 'sm' && 'px-3 py-2 text-sm',

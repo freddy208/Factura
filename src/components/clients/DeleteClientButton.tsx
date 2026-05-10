@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 import { usePremiumModal } from '@/hooks/usePremiumModal'
 
@@ -9,6 +10,7 @@ export default function DeleteClientButton({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { confirm, alert, setLoading: setModalLoading, ModalComponent } = usePremiumModal()
+  const router = useSafeRouter()
 
   async function handleDelete() {
     const confirmed = await confirm(
@@ -32,7 +34,7 @@ export default function DeleteClientButton({ clientId }: { clientId: string }) {
         setLoading(false)
         return
       }
-      window.location.href = '/clients'
+      router.redirect('/clients')
     } catch {
       await alert('Erreur inattendue', 'Une erreur inattendue est survenue.', 'danger')
       setModalLoading(false)

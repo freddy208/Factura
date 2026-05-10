@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 import { Download, Send, CheckCircle, ArrowRight, Trash2 } from 'lucide-react'
 import { usePremiumModal } from '@/hooks/usePremiumModal'
@@ -14,6 +15,7 @@ export default function InvoiceActions({
   isPro: boolean
 }) {
   const [loading, setLoading] = useState<string | null>(null)
+  const router = useSafeRouter()
   const { alert, confirm, setLoading: setModalLoading, ModalComponent } = usePremiumModal()
 
   async function updateStatus(status: string) {
@@ -49,7 +51,7 @@ export default function InvoiceActions({
       await alert('Erreur', error.message || 'Suppression impossible.', 'danger')
       return
     }
-    window.location.href = invoice.type === 'invoice' ? '/factures' : '/devis'
+    router.redirect(invoice.type === 'invoice' ? '/factures' : '/devis')
   }
 
   async function handleConvert() {
@@ -126,7 +128,7 @@ export default function InvoiceActions({
       return
     }
 
-    window.location.href = `/factures/${newInvoice.id}`
+    router.redirect(`/factures/${newInvoice.id}`)
     setLoading(null)
   }
 
@@ -146,17 +148,24 @@ export default function InvoiceActions({
   return (
     <>
       <ModalComponent />
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6">
       {/* Télécharger PDF */}
       <button
         onClick={handleDownloadPDF}
         disabled={loading === 'pdf'}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+        className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
                    disabled:opacity-60 text-white font-semibold px-4 py-2.5
-                   rounded-xl transition-all text-sm cursor-pointer"
+                   rounded-xl transition-all duration-200 text-sm cursor-pointer shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100 group"
       >
-        <Download size={16} />
-        {loading === 'pdf' ? 'Génération...' : 'Télécharger PDF'}
+        <Download size={16} className="group-hover:scale-110 transition-transform" />
+        {loading === 'pdf' ? (
+          <span className="flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Génération...
+          </span>
+        ) : (
+          'Télécharger PDF'
+        )}
       </button>
 
       {/* Marquer envoyée */}
@@ -164,12 +173,19 @@ export default function InvoiceActions({
         <button
           onClick={() => updateStatus('sent')}
           disabled={!!loading}
-          className="flex items-center gap-2 bg-white border border-gray-200
-                     hover:bg-gray-50 disabled:opacity-60 text-gray-700
-                     font-semibold px-4 py-2.5 rounded-xl transition-all text-sm cursor-pointer"
+          className="flex items-center gap-2 bg-white border border-slate-200
+                     hover:bg-slate-50 hover:border-indigo-200 disabled:opacity-60 text-slate-700
+                     font-semibold px-4 py-2.5 rounded-xl transition-all duration-200 text-sm cursor-pointer shadow-sm hover:shadow-md transform hover:scale-105 disabled:scale-100 group"
         >
-          <Send size={16} />
-          {loading === 'sent' ? '...' : 'Marquer envoyée'}
+          <Send size={16} className="group-hover:scale-110 transition-transform" />
+          {loading === 'sent' ? (
+            <span className="flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+              Envoi...
+            </span>
+          ) : (
+            'Marquer envoyée'
+          )}
         </button>
       )}
 
@@ -178,12 +194,19 @@ export default function InvoiceActions({
         <button
           onClick={() => updateStatus('paid')}
           disabled={!!loading}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700
+          className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700
                      disabled:opacity-60 text-white font-semibold px-4 py-2.5
-                     rounded-xl transition-all text-sm cursor-pointer"
+                     rounded-xl transition-all duration-200 text-sm cursor-pointer shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100 group"
         >
-          <CheckCircle size={16} />
-          {loading === 'paid' ? '...' : 'Marquer payée'}
+          <CheckCircle size={16} className="group-hover:scale-110 transition-transform" />
+          {loading === 'paid' ? (
+            <span className="flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Mise à jour...
+            </span>
+          ) : (
+            'Marquer payée'
+          )}
         </button>
       )}
 
@@ -193,16 +216,23 @@ export default function InvoiceActions({
           onClick={handleConvert}
           disabled={!!loading}
           className={`flex items-center gap-2 font-semibold px-4 py-2.5
-                     rounded-xl transition-all text-sm cursor-pointer
+                     rounded-xl transition-all duration-200 text-sm cursor-pointer shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100 group
                      ${isPro
-                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                       : 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-400 cursor-not-allowed hover:from-gray-100 hover:to-slate-100'
                      }`}
         >
-          <ArrowRight size={16} />
-          {loading === 'convert' ? '...' : 'Convertir en facture'}
+          <ArrowRight size={16} className={`group-hover:scale-110 transition-transform ${!isPro ? 'opacity-50' : ''}`} />
+          {loading === 'convert' ? (
+            <span className="flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+              Conversion...
+            </span>
+          ) : (
+            'Convertir en facture'
+          )}
           {!isPro && (
-            <span className="text-xs bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded-md">
+            <span className="text-xs bg-gradient-to-r from-amber-400 to-orange-400 text-amber-900 px-2 py-0.5 rounded-md font-semibold shadow-sm">
               PRO
             </span>
           )}
@@ -213,13 +243,20 @@ export default function InvoiceActions({
       <button
         onClick={handleDelete}
         disabled={!!loading}
-        className="flex items-center gap-2 bg-white border border-gray-200
-                   hover:bg-red-50 hover:border-red-200 hover:text-red-600
-                   disabled:opacity-60 text-gray-400 font-semibold px-4 py-2.5
-                   rounded-xl transition-all text-sm cursor-pointer ml-auto"
+        className="flex items-center gap-2 bg-white border border-slate-200
+                   hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:border-red-200 hover:text-red-600
+                   disabled:opacity-60 text-slate-400 font-semibold px-4 py-2.5
+                   rounded-xl transition-all duration-200 text-sm cursor-pointer ml-auto shadow-sm hover:shadow-md transform hover:scale-105 disabled:scale-100 group"
       >
-        <Trash2 size={16} />
-        {loading === 'delete' ? '...' : 'Supprimer'}
+        <Trash2 size={16} className="group-hover:scale-110 transition-transform" />
+        {loading === 'delete' ? (
+          <span className="flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+            Suppression...
+          </span>
+        ) : (
+          'Supprimer'
+        )}
       </button>
       </div>
     </>

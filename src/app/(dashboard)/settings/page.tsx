@@ -1,6 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { User, Mail, Building, Shield, Bell, Lock, Smartphone, Globe, Trash2, Save } from 'lucide-react'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { User, Mail, Building, Shield, Bell, Lock, Smartphone, Globe, Trash2, Save, CheckCircle, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -13,23 +16,134 @@ type Profile = {
   pro_activated_at: string | null
 }
 
-export default async function SettingsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+export default function SettingsPage() {
+  const router = useRouter()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    full_name: '',
+    company_name: '',
+    email: ''
+  })
 
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // Notification settings
+  const [notifications, setNotifications] = useState({
+    email_invoices: true,
+    mobile_alerts: true
+  })
 
-  const profile = profileData as Profile | null
+  // Security settings
+  const [security, setSecurity] = useState({
+    two_factor: true
+  })
 
-  if (!profile) redirect('/onboarding')
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      const profile = profileData as Profile | null
+      
+      if (!profile) {
+        router.push('/onboarding')
+        return
+      }
+
+      setProfile(profile)
+      setFormData({
+        full_name: profile.full_name || '',
+        company_name: profile.company_name || '',
+        email: profile.email
+      })
+    } catch (error) {
+      console.error('Error loading profile:', error)
+      setMessage({ type: 'error', text: 'Erreur lors du chargement du profil' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      const updateData = {
+        full_name: formData.full_name || null,
+        company_name: formData.company_name || null
+      }
+      
+      const { error } = await (supabase.from('profiles') as any)
+        .update(updateData)
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      // Reload profile to get updated data
+      await loadProfile()
+      setMessage({ type: 'success', text: 'Profil mis à jour avec succès' })
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      setMessage({ type: 'error', text: 'Erreur lors de la mise à jour du profil' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return null
+  }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Message de succès/erreur */}
+      {message && (
+        <div className={`rounded-xl p-4 flex items-center gap-3 ${
+          message.type === 'success' 
+            ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' 
+            : 'bg-red-50 border border-red-200 text-red-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span className="font-medium">{message.text}</span>
+        </div>
+      )}
+
       {/* Header */}
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <div className="flex items-center gap-3">
@@ -56,17 +170,22 @@ export default async function SettingsPage() {
               <label className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-2 block">
                 Nom complet
               </label>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900">
-                {profile.full_name || 'Non renseigné'}
-              </div>
+              <input
+                type="text"
+                value={formData.full_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Entrez votre nom complet"
+              />
             </div>
             
             <div>
               <label className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-2 block">
                 Email
               </label>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-500">
                 {profile.email}
+                <span className="text-xs text-slate-400 ml-2">(non modifiable)</span>
               </div>
             </div>
           </div>
@@ -76,9 +195,13 @@ export default async function SettingsPage() {
               <label className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-2 block">
                 Entreprise
               </label>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900">
-                {profile.company_name || 'Non renseignée'}
-              </div>
+              <input
+                type="text"
+                value={formData.company_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Entrez le nom de votre entreprise"
+              />
             </div>
 
             <div>
@@ -217,13 +340,17 @@ export default async function SettingsPage() {
               <User size={16} />
               Voir profil
             </Link>
-            <button className="tap-target flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl transition-all">
+            <button 
+              type="submit"
+              disabled={saving}
+              className="tap-target flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium px-4 py-2 rounded-xl transition-all"
+            >
               <Save size={16} />
-              Sauvegarder
+              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
             </button>
           </div>
         </div>
       </section>
-    </div>
+    </form>
   )
 }

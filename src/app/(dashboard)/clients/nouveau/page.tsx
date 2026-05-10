@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { useSafeRouter } from '@/hooks/useRouter'
+import { ArrowLeft, User, Building2, Mail, Phone, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import PremiumCard from '@/components/ui/PremiumCard'
+import PremiumButton from '@/components/ui/PremiumButton'
+import PremiumInput from '@/components/ui/PremiumInput'
 
 type ClientForm = {
   name: string
@@ -15,6 +18,7 @@ type ClientForm = {
 }
 
 export default function NouveauClientPage() {
+  const router = useSafeRouter()
   const [form, setForm] = useState<ClientForm>({
     name: '',
     email: '',
@@ -24,7 +28,6 @@ export default function NouveauClientPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const canSubmit = useMemo(() => form.name.trim().length > 0, [form.name])
 
@@ -50,7 +53,7 @@ export default function NouveauClientPage() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        window.location.href = '/login'
+        router.redirect('/login')
         return
       }
 
@@ -79,95 +82,120 @@ export default function NouveauClientPage() {
 
   return (
     <main className="mx-auto max-w-2xl space-y-5 pb-20">
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <Link href="/clients" className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50">
+      {/* Header premium */}
+      <PremiumCard variant="elevated" padding="lg" hover={false}>
+        <div className="flex items-center gap-4">
+          <Link href="/clients" className="rounded-xl border border-blue-200/50 p-2.5 text-blue-600 hover:bg-blue-50 transition-colors">
             <ArrowLeft size={18} />
           </Link>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Module Clients</p>
-            <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl">Nouveau client</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              <User size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Module Clients</p>
+              <h1 className="text-xl font-black text-slate-900 sm:text-2xl">Nouveau client</h1>
+            </div>
           </div>
         </div>
-        <p className="text-sm text-slate-500">Une fiche simple et complete pour des factures plus rapides.</p>
-      </section>
+        <p className="mt-4 text-sm text-slate-600">Une fiche simple et complete pour des factures plus rapides.</p>
+      </PremiumCard>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <form className="space-y-4" onSubmit={handleSubmit}>
+      {/* Formulaire premium */}
+      <PremiumCard variant="default" padding="lg" hover={false}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Nom complet *</label>
-            <input
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <User size={14} className="text-blue-600" />
+              Nom complet *
+            </label>
+            <PremiumInput
               value={form.name}
-              onChange={(event) => setField('name', event.target.value)}
+              onChange={(value) => setField('name', value)}
               placeholder="Jean Dupont"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+              required
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Entreprise</label>
-              <input
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Building2 size={14} className="text-blue-600" />
+                Entreprise
+              </label>
+              <PremiumInput
                 value={form.company}
-                onChange={(event) => setField('company', event.target.value)}
+                onChange={(value) => setField('company', value)}
                 placeholder="Mon Entreprise"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Email</label>
-              <input
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Mail size={14} className="text-blue-600" />
+                Email
+              </label>
+              <PremiumInput
                 type="email"
                 value={form.email}
-                onChange={(event) => setField('email', event.target.value)}
+                onChange={(value) => setField('email', value)}
                 placeholder="client@entreprise.com"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Telephone</label>
-              <input
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Phone size={14} className="text-blue-600" />
+                Téléphone
+              </label>
+              <PremiumInput
                 value={form.phone}
-                onChange={(event) => setField('phone', event.target.value)}
+                onChange={(value) => setField('phone', value)}
                 placeholder="+237 6XX XXX XXX"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Adresse</label>
-              <input
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <MapPin size={14} className="text-blue-600" />
+                Adresse
+              </label>
+              <PremiumInput
                 value={form.address}
-                onChange={(event) => setField('address', event.target.value)}
+                onChange={(value) => setField('address', value)}
                 placeholder="Douala, Cameroun"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
               />
             </div>
           </div>
 
           {error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
           ) : null}
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-            <Link
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+            <PremiumButton
               href="/clients"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 sm:w-1/2"
+              variant="secondary"
+              size="lg"
+              fullWidth
             >
               Annuler
-            </Link>
-            <button
+            </PremiumButton>
+            <PremiumButton
               type="submit"
-              disabled={!canSubmit || loading}
-              className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-1/2"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              disabled={!canSubmit}
+              fullWidth
             >
               {loading ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
+            </PremiumButton>
           </div>
         </form>
-      </section>
+      </PremiumCard>
     </main>
   )
 }

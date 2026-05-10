@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Wifi, WifiOff } from 'lucide-react'
+import { useOnlineStatus, useLocalStorage } from '@/hooks/useIsClient'
 
 const LAST_SYNC_KEY = 'factura:last-sync'
 
@@ -13,31 +14,8 @@ function formatSyncDate(value: string | null): string {
 }
 
 export default function ConnectionStatus({ compact = false }: { compact?: boolean }) {
-  const [isOnline, setIsOnline] = useState(true)
-  const [lastSync, setLastSync] = useState<string | null>(null)
-
-  useEffect(() => {
-    const updateOnlineState = () => {
-      const online = navigator.onLine
-      setIsOnline(online)
-      if (online) {
-        const now = new Date().toISOString()
-        localStorage.setItem(LAST_SYNC_KEY, now)
-        setLastSync(now)
-      }
-    }
-
-    setIsOnline(navigator.onLine)
-    setLastSync(localStorage.getItem(LAST_SYNC_KEY))
-    updateOnlineState()
-    window.addEventListener('online', updateOnlineState)
-    window.addEventListener('offline', updateOnlineState)
-
-    return () => {
-      window.removeEventListener('online', updateOnlineState)
-      window.removeEventListener('offline', updateOnlineState)
-    }
-  }, [])
+  const isOnline = useOnlineStatus()
+  const [lastSync] = useLocalStorage<string | null>(LAST_SYNC_KEY, null)
 
   const syncLabel = useMemo(() => formatSyncDate(lastSync), [lastSync])
 

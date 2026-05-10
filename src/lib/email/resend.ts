@@ -224,3 +224,57 @@ export async function sendInvoiceSentEmail(
     throw new Error(error.message)
   }
 }
+
+export async function sendPasswordResetEmail(email: string, resetUrl: string) {
+  const resend = getResend()
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'Réinitialisation de votre mot de passe FACTURA',
+    html: baseTemplate(`
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:56px;height:56px;background:#FEF3C7;border-radius:50%;
+                      display:inline-flex;align-items:center;justify-content:center;
+                      font-size:24px;">
+            🔐
+          </div>
+        </div>
+        <h2 style="color:#111827;font-size:22px;font-weight:700;
+                   margin:0 0 8px;text-align:center;">
+          Mot de passe oublié ?
+        </h2>
+        <p style="color:#6B7280;font-size:15px;line-height:1.6;
+                  margin:0 0 24px;text-align:center;">
+          Nous avons reçu une demande de réinitialisation de mot de passe
+          pour votre compte FACTURA.
+        </p>
+        <div style="background:#FEF3C7;border-radius:12px;padding:16px;
+                    border:1px solid #FDE68A;margin-bottom:24px;">
+          <p style="color:#92400E;font-size:13px;font-weight:600;margin:0 0 8px;">
+            ⚠️ Sécurité :
+          </p>
+          <p style="color:#78350F;font-size:13px;margin:0;line-height:1.6;">
+            Ce lien expire dans 24 heures. Si vous n'avez pas demandé cette
+            réinitialisation, ignorez cet email.
+          </p>
+        </div>
+        <a href="${resetUrl}"
+           style="display:block;background:#2563EB;color:white;font-weight:600;
+                  font-size:15px;padding:14px 28px;border-radius:12px;
+                  text-decoration:none;text-align:center;">
+          Réinitialiser mon mot de passe →
+        </a>
+        <p style="color:#9CA3AF;font-size:12px;margin:24px 0 0;text-align:center;
+                  line-height:1.5;">
+          Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br/>
+          <span style="word-break:break-all;font-family:monospace;background:#F3F4F6;
+                        padding:2px 4px;border-radius:4px;">
+            ${resetUrl}
+          </span>
+        </p>
+      `),
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
+}

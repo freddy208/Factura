@@ -101,7 +101,7 @@ function FacturePreview({ form }: { form: FormState }) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold" style={{ color: ds.color.textPrimary }}>
-              FACTURA
+              Factura
             </p>
             <p className="text-[11px]" style={{ color: ds.color.textMuted }}>
               Facture #FA-0001
@@ -248,7 +248,7 @@ export default function OnboardingPage() {
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-6 text-center sm:mb-8">
           <div className="mb-4 inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-[11px] font-semibold tracking-wide">
-            <span style={{ color: ds.color.primary }}>FACTURA ONBOARDING</span>
+            <span style={{ color: ds.color.primary }}>Factura Onboarding</span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl" style={{ color: ds.color.textPrimary }}>
             Construisons votre espace de facturation

@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bell, LogOut, PanelLeft, Search, Zap } from 'lucide-react'
+import { Bell, LogOut, PanelLeft, Search, Zap, Settings, User, ChevronDown } from 'lucide-react'
+import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 import ConnectionStatus from '@/components/dashboard/ConnectionStatus'
 
@@ -52,9 +53,19 @@ export default function DashboardTopBar({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const title = resolvePageTitle(pathname)
+  const safeRouter = useSafeRouter()
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  
+  const title = resolvePageTitle(pathname)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const filteredLinks = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -67,7 +78,7 @@ export default function DashboardTopBar({
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    safeRouter.redirect('/login')
   }
 
   function handleSearchSubmit() {
@@ -78,14 +89,64 @@ export default function DashboardTopBar({
     setQuery('')
   }
 
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isUserMenuOpen])
+
+  // Get user initials for avatar
+  function getUserInitials(name: string | null, email: string): string {
+    if (name) {
+      const names = name.trim().split(' ')
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+      }
+      return name.substring(0, 2).toUpperCase()
+    }
+    return email.substring(0, 2).toUpperCase()
+  }
+
+  // Render a simplified version during SSR to prevent hydration mismatch
+  if (!isMounted) {
+    return (
+      <header className="sticky top-0 z-30 border-b border-blue-200/80 bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-blue-100">Factura workspace</p>
+              <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{title}</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white/20 rounded-lg animate-pulse"></div>
+            <div className="w-8 h-8 bg-white/20 rounded-lg animate-pulse"></div>
+            <div className="w-8 h-8 bg-white/20 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-blue-200/80 bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 lg:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={onDesktopSidebarToggle}
-            className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700 lg:inline-flex"
+            className="hidden h-9 w-9 items-center justify-center rounded-lg border border-blue-300/50 text-white/90 transition-colors hover:bg-white/20 hover:text-white lg:inline-flex"
             aria-label={isDesktopSidebarOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
             title={isDesktopSidebarOpen ? 'Fermer la sidebar' : 'Ouvrir la sidebar'}
           >
@@ -93,8 +154,8 @@ export default function DashboardTopBar({
           </button>
 
           <div className="min-w-0">
-          <p className="text-[11px] font-medium text-slate-500">Factura workspace</p>
-          <h1 className="truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg">{title}</h1>
+          <p className="text-[11px] font-medium text-blue-100">Factura workspace</p>
+          <h1 className="truncate text-base font-semibold tracking-tight text-white sm:text-lg">{title}</h1>
           </div>
         </div>
 
@@ -102,8 +163,8 @@ export default function DashboardTopBar({
           <ConnectionStatus compact />
 
           <div className="relative hidden sm:block">
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2">
-              <Search size={14} className="text-slate-400" />
+            <div className="flex items-center gap-2 rounded-xl border border-blue-300/50 bg-white/20 px-3 py-2">
+              <Search size={14} className="text-blue-100" />
               <input
                 value={query}
                 onChange={(event) => {
@@ -121,7 +182,7 @@ export default function DashboardTopBar({
                   }
                 }}
                 placeholder="Recherche rapide"
-                className="w-40 bg-transparent text-xs text-slate-700 outline-none placeholder:text-slate-500"
+                className="w-40 bg-transparent text-xs text-white outline-none placeholder:text-blue-100"
                 aria-label="Recherche rapide de navigation"
               />
             </div>
@@ -154,7 +215,7 @@ export default function DashboardTopBar({
           {profile?.plan === 'free' ? (
             <Link
               href="/upgrade"
-              className="hidden items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-95 sm:inline-flex"
+              className="hidden items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-blue-700 shadow-sm transition-opacity hover:bg-blue-50 sm:inline-flex"
             >
               <Zap size={14} />
               Pro
@@ -167,20 +228,71 @@ export default function DashboardTopBar({
 
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-300/50 text-white/90 transition-colors hover:bg-white/20 hover:text-white"
             aria-label="Notifications"
           >
             <Bell size={16} />
           </button>
 
-          <button
-            onClick={handleLogout}
-            type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-            aria-label="Deconnexion"
-          >
-            <LogOut size={16} />
-          </button>
+          {/* User Avatar with Dropdown */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-300/50 bg-white/20 text-white transition-colors hover:bg-white/30"
+              aria-label="Menu utilisateur"
+            >
+              {profile ? (
+                <span className="text-sm font-semibold">
+                  {getUserInitials(profile.full_name, profile.email)}
+                </span>
+              ) : (
+                <User size={16} />
+              )}
+            </button>
+
+            {isUserMenuOpen && profile && (
+              <div className="absolute right-0 top-11 w-48 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                <div className="border-b border-slate-100/50 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
+                    {profile.full_name || profile.email}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">{profile.email}</p>
+                </div>
+                
+                <div className="py-1">
+                  <Link
+                    href="/profil"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <User size={16} />
+                    Profil
+                  </Link>
+                  
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <Settings size={16} />
+                    Paramètres
+                  </Link>
+                  
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setIsUserMenuOpen(false)
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <LogOut size={16} />
+                    Déconnexion
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

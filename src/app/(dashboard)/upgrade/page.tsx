@@ -1,25 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { CheckCircle, Zap, MessageCircle, Crown, Star, Shield } from 'lucide-react'
+import { CheckCircle, Zap, Shield, Crown } from 'lucide-react'
 import { PRO_MONTHLY_FCFA } from '@/lib/constants'
 import UpgradeNotifyAdminButton from '@/components/upgrade/UpgradeNotifyAdminButton'
-
-const FREE_FEATURES = [
-  '5 factures par mois',
-  '5 devis par mois',
-  'Watermark "FACTURA FREE"',
-  '1 utilisateur',
-]
-
-const PRO_FEATURES = [
-  'Factures illimitées',
-  'Devis illimités',
-  'Sans watermark',
-  'PDF premium',
-  'Conversion devis → facture',
-  'Dashboard complet',
-  'Support prioritaire',
-]
+import PricingCards from '@/components/upgrade/PricingCards'
+import WhatsAppCTA from '@/components/upgrade/WhatsAppCTA'
 
 export default async function UpgradePage() {
   const supabase = await createClient()
@@ -61,149 +46,85 @@ export default async function UpgradePage() {
   }
 
   const whatsappMessage = encodeURIComponent(
-    `Bonjour, je souhaite passer en Pro sur FACTURA.\n\nEmail du compte : ${profile?.email || user.email}\nEntreprise : ${profile?.company_name || ''}\n\nJe vais effectuer le paiement de ${PRO_MONTHLY_FCFA.toLocaleString('fr-FR')} FCFA.`
+    `Bonjour, je souhaite passer en Pro sur Factura.\n\nEmail du compte : ${profile?.email || user.email}\nEntreprise : ${profile?.company_name || ''}\n\nJe vais effectuer le paiement de ${PRO_MONTHLY_FCFA.toLocaleString('fr-FR')} FCFA.`
   )
 
   const whatsappUrl = `https://wa.me/237620187495?text=${whatsappMessage}`
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header premium */}
-        <section className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-100
-                          text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 shadow-lg">
-            <Zap size={14} className="text-white" />
+        <section className="text-center mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-100
+                          text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 rounded-full mb-4 sm:mb-6 shadow-lg animate-pulse">
+            <Zap size={12} className="text-white sm:size-4" />
             Passez au niveau supérieur
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            Débloquez tout FACTURA
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4">
+            Débloquez tout Factura
           </h1>
-          <p className="text-slate-500 text-lg mb-2">
+          <p className="text-slate-600 text-base sm:text-lg mb-3">
             Factures illimitées, PDF premium, sans watermark
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
-            <Shield size={16} className="text-slate-400" />
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-slate-500">
+            <Shield size={14} className="text-slate-400 sm:size-4" />
             <span>Offre exclusive pour professionnels</span>
           </div>
         </section>
 
         {/* Cards plans premium */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Plan Gratuit */}
-          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-            {/* Badge plan actuel */}
-            <div className="absolute top-4 right-4 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
-              Plan actuel
-            </div>
-            
-            <div className="mb-6">
-              <p className="font-semibold text-slate-900 text-lg mb-2">Gratuit</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-slate-900">0</span>
-                <span className="text-slate-500 text-lg">FCFA / mois</span>
-              </div>
-            </div>
-            
-            <div className="space-y-3 mb-6">
-              {FREE_FEATURES.map((f, index) => (
-                <div key={f} className="flex items-center gap-3 text-sm text-slate-500">
-                  <div className="w-5 h-5 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-slate-400 font-bold text-xs">{index + 1}</span>
-                  </div>
-                  <CheckCircle size={14} className="text-slate-300 flex-shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="w-full text-center py-3 px-4 rounded-xl border border-slate-200
-                          text-slate-400 text-sm font-medium bg-slate-50">
-              Plan actuel
-            </div>
-          </div>
-
-          {/* Plan Pro */}
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-6 shadow-xl transition-all duration-200 hover:shadow-2xl hover:-translate-y-1">
-            {/* Badge populaire */}
-            <div className="absolute top-4 right-4 bg-white text-blue-600 text-xs
-                            font-bold px-3 py-1 rounded-full shadow-lg">
-              RECOMMANDÉ
-            </div>
-            
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Crown size={24} className="text-yellow-300" />
-                <p className="font-semibold text-white text-xl">Pro</p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-white">
-                  {PRO_MONTHLY_FCFA.toLocaleString('fr-FR')}
-                </span>
-                <span className="text-blue-200 text-lg">FCFA / mois</span>
-              </div>
-              <p className="text-blue-200 text-sm mt-1">ou 5 USD / mois</p>
-            </div>
-
-            <div className="space-y-3 mb-6">
-              {PRO_FEATURES.map((f, index) => (
-                <div key={f} className="flex items-center gap-3 text-sm text-white">
-                  <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Star size={12} className="text-yellow-300" />
-                  </div>
-                  <CheckCircle size={14} className="text-blue-300 flex-shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <PricingCards />
 
         {/* Instructions paiement */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-          <h2 className="font-bold text-slate-900 text-lg mb-1">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 mb-6">
+          <h2 className="font-bold text-slate-900 text-base sm:text-lg mb-1">
             Comment passer en Pro ?
           </h2>
-          <p className="text-slate-500 text-sm mb-6">
+          <p className="text-slate-500 text-sm mb-4 sm:mb-6">
             Paiement simple en 3 étapes, activation sous 24h
           </p>
 
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {/* Étape 1 */}
-            <div className="flex gap-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center
-                            justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="flex gap-3 sm:gap-4">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center
+                            justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                 1
               </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-sm">
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900 text-xs sm:text-sm">
                   Effectuez le virement de {PRO_MONTHLY_FCFA.toLocaleString('fr-FR')} FCFA
                 </p>
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center justify-between bg-yellow-50 border
-                                border-yellow-100 rounded-xl px-4 py-3">
-                    <div>
-                      <p className="text-xs text-yellow-700 font-medium">MTN Mobile Money</p>
-                      <p className="text-base font-bold text-slate-900 mt-0.5">
-                        +237 679997956
-                      </p>
-                    </div>
-                    <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center
-                                    justify-center text-white text-xs font-bold">
-                      MTN
+                                border-yellow-100 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-400 rounded-lg flex items-center
+                                      justify-center text-white font-bold text-xs sm:text-sm">
+                        MTN
+                      </div>
+                      <div>
+                        <p className="text-xs text-yellow-700 font-medium">MTN Mobile Money</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-900 mt-0.5">
+                          +237 679997956
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between bg-orange-50 border
-                                border-orange-100 rounded-xl px-4 py-3">
-                    <div>
-                      <p className="text-xs text-orange-600 font-medium">Orange Money</p>
-                      <p className="text-base font-bold text-slate-900 mt-0.5">
-                        +237 691093420
-                      </p>
-                    </div>
-                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center
-                                    justify-center text-white text-xs font-bold">
-                      OM
+                                border-orange-100 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500 rounded-lg flex items-center
+                                      justify-center text-white font-bold text-xs sm:text-sm">
+                        OM
+                      </div>
+                      <div>
+                        <p className="text-xs text-orange-600 font-medium">Orange Money</p>
+                        <p className="text-sm sm:text-base font-bold text-slate-900 mt-0.5">
+                          +237 691093420
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -211,14 +132,14 @@ export default async function UpgradePage() {
             </div>
 
             {/* Étape 2 */}
-            <div className="flex gap-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center
-                            justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="flex gap-3 sm:gap-4">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center
+                            justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                 2
               </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-sm">
-                  Envoyez la preuve sur WhatsApp
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900 text-xs sm:text-sm">
+                  Envoyez la preuve sur WhatsApp ( +237 620 187 495 )
                 </p>
                 <p className="text-slate-500 text-xs mt-1">
                   Capture d&apos;écran du reçu + votre email :{' '}
@@ -230,14 +151,14 @@ export default async function UpgradePage() {
             </div>
 
             {/* Étape 3 */}
-            <div className="flex gap-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center
-                            justify-center text-white font-bold text-sm flex-shrink-0">
+            <div className="flex gap-3 sm:gap-4">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center
+                            justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
                 3
               </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-sm">
-                  Activation sous 24h
+              <div className="flex-1">
+                <p className="font-semibold text-slate-900 text-xs sm:text-sm">
+                  Activation sous 30min
                 </p>
                 <p className="text-slate-500 text-xs mt-1">
                   Votre compte sera upgradé et vous recevrez une confirmation par email
@@ -249,46 +170,29 @@ export default async function UpgradePage() {
 
         <UpgradeNotifyAdminButton />
 
-        {/* CTA WhatsApp premium */}
-        <section className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 shadow-xl">
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-4">
-              <MessageCircle size={20} className="text-white" />
-              <span className="text-white font-semibold">Contact direct</span>
-            </div>
-            <h3 className="text-white text-lg font-bold mb-2">
-              Prêt à passer en Pro ?
-            </h3>
-            <p className="text-green-100 text-sm">
-              Cliquez pour envoyer votre demande automatiquement
-            </p>
-          </div>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-3 w-full bg-white hover:bg-green-50 text-green-700 font-bold py-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-          >
-            <MessageCircle size={20} />
-            <span>Contacter sur WhatsApp pour passer en Pro</span>
-            <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center group-hover:bg-green-700 transition-colors">
-              <span className="text-white text-xs font-bold">→</span>
-            </div>
-          </a>
-        </section>
+        <WhatsAppCTA whatsappUrl={whatsappUrl} />
 
         {/* Footer info */}
         <footer className="mt-8 text-center">
           <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mb-3">
-            <Shield size={14} />
-            <span>Activation manuelle par l&apos;équipe FACTURA sous 24h ouvrées</span>
+            <Shield size={12} />
+            <span>Activation manuelle par l&apos;équipe Factura sous 24h ouvrées</span>
           </div>
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-            <span>✓ Service client disponible</span>
-            <span>•</span>
-            <span>Paiement sécurisé</span>
-            <span>•</span>
-            <span>Garantie satisfaction</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Service client disponible</span>
+            </div>
+            <span className="hidden sm:inline">•</span>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>Paiement sécurisé</span>
+            </div>
+            <span className="hidden sm:inline">•</span>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span>Garantie satisfaction</span>
+            </div>
           </div>
         </footer>
       </div>

@@ -120,23 +120,28 @@ export async function strictRateLimitAsync(req: NextRequest): Promise<NextRespon
         prefix: 'factura:rl:strict',
       })
     }
-    const ip = clientIp(req)
-    const { success, limit, remaining, reset } = await ratelimitStrict.limit(ip)
-    if (!success) {
-      const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
-      return NextResponse.json(
-        { error: 'Trop de requêtes. Veuillez réessayer plus tard.', retryAfter },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-          },
-        }
-      )
+    try {
+      const ip = clientIp(req)
+      const { success, limit, remaining, reset } = await ratelimitStrict.limit(ip)
+      if (!success) {
+        const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000))
+        return NextResponse.json(
+          { error: 'Trop de requêtes. Veuillez réessayer plus tard.', retryAfter },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': retryAfter.toString(),
+              'X-RateLimit-Limit': limit.toString(),
+              'X-RateLimit-Remaining': remaining.toString(),
+            },
+          }
+        )
+      }
+      return null
+    } catch (error) {
+      // Fallback vers rate limiting en mémoire si Upstash a des permissions insuffisantes
+      console.warn('Upstash strict rate limit failed, using memory fallback:', error)
     }
-    return null
   }
   return memoryLimiter({ windowMs: 60_000, maxRequests: 10 }, req)
 }

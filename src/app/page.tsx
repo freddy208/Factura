@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import {
   CheckCircle, Zap, FileText, Users, Receipt, Download, 
@@ -250,7 +251,7 @@ export default function LandingPage() {
                   <div className="w-3 h-3 bg-yellow-400 rounded-full" />
                   <div className="w-3 h-3 bg-green-400 rounded-full" />
                 </div>
-                <span className="text-white font-bold">FACTURA - Tableau de bord</span>
+                <span className="text-white font-bold">Factura - Tableau de bord</span>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -463,7 +464,7 @@ export default function LandingPage() {
           <p className="text-blue-100 text-base sm:text-lg mb-6 sm:mb-8">
             Rejoignez des centaines de freelances et PME en Afrique
             <br className="hidden sm:block" />
-            qui font confiance a FACTURA.
+            qui font confiance a Factura.
           </p>
           <Link
             href="/register"
@@ -584,10 +585,13 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center
                         justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img 
+            <Image 
               src="/icon-192.png" 
               alt="Factura" 
+              width={24}
+              height={24}
               className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg"
+              priority
             />
             <span className="text-white font-bold text-sm sm:text-base">Factura</span>
           </div>

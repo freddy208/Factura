@@ -247,7 +247,7 @@ export async function generateInvoicePDF(
     doc.setTextColor(210, 210, 210)
     doc.setFontSize(50)
     doc.setFont('helvetica', 'bold')
-    doc.text('FACTURA FREE', 105, 190, {
+    doc.text('Factura Free', 105, 190, {
       align: 'center',
       angle: 45,
     })
