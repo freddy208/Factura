@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Users, CheckCircle, Clock, FileText, TrendingUp, Settings, CreditCard, BarChart3, DollarSign, Activity, AlertTriangle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import AdminActivateButton from '@/components/admin/AdminActivateButton'
+import { AdminActivateButton } from '@/components/admin/AdminActivateButton'
 
 interface DashboardData {
   profiles: any[]
