@@ -67,24 +67,11 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="w-64 bg-slate-900 border-r border-slate-800 min-h-screen">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg">F</span>
-          </div>
-          <div>
-            <span className="font-bold text-white text-lg">FACTURA</span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold px-2 py-0.5 rounded-full shadow-sm">
-                Admin
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          {navItems.map((item) => {
+    <>
+      {/* Mobile navigation - Bottom bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-50">
+        <div className="flex items-center justify-around py-2">
+          {navItems.slice(0, 5).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
             const Icon = item.icon
             
@@ -92,41 +79,87 @@ export function AdminNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'text-blue-400'
+                    : 'text-slate-500 hover:text-white'
                 }`}
               >
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
-                  isActive ? 'bg-white/20' : 'bg-slate-800 group-hover:bg-slate-700'
-                }`}>
-                  <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400'} />
-                </div>
-                <div className="flex-1">
-                  <div className={`font-medium text-sm ${isActive ? 'text-white' : 'text-slate-300'}`}>
-                    {item.title}
-                  </div>
-                  <div className={`text-xs ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
-                    {item.description}
-                  </div>
-                </div>
-                {isActive && (
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                )}
+                <Icon size={18} className={isActive ? 'text-blue-400' : 'text-slate-500'} />
+                <span className={`text-xs ${isActive ? 'text-blue-400 font-medium' : 'text-slate-500'}`}>
+                  {item.title.split(' ')[0]}
+                </span>
               </Link>
             )
           })}
         </div>
-      </div>
+      </nav>
 
-      {/* Footer navigation */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-800">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span>Système en ligne</span>
+      {/* Desktop navigation - Sidebar */}
+      <nav className="hidden lg:block lg:w-64 bg-slate-900 border-r border-slate-800 min-h-screen">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">F</span>
+            </div>
+            <div>
+              <span className="font-bold text-white text-lg">FACTURA</span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold px-2 py-0.5 rounded-full shadow-sm">
+                  Admin
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
+              const Icon = item.icon
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                    isActive ? 'bg-white/20' : 'bg-slate-800 group-hover:bg-slate-700'
+                  }`}>
+                    <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400'} />
+                  </div>
+                  <div className="flex-1">
+                    <div className={`font-medium text-sm ${isActive ? 'text-white' : 'text-slate-300'}`}>
+                      {item.title}
+                    </div>
+                    <div className={`text-xs ${isActive ? 'text-blue-100' : 'text-slate-500'}`}>
+                      {item.description}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
         </div>
-      </div>
-    </nav>
+
+        {/* Footer navigation */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-800">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Système en ligne</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile padding for bottom nav */}
+      <div className="lg:hidden h-16"></div>
+    </>
   )
 }

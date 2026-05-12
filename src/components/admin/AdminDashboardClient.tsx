@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Users, CheckCircle, Clock, FileText, TrendingUp, Settings, CreditCard, BarChart3, DollarSign, Activity, AlertTriangle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { tokens } from '@/lib/design-system'
 import { AdminActivateButton } from '@/components/admin/AdminActivateButton'
 
 interface DashboardData {
@@ -66,7 +67,7 @@ export function AdminDashboardClient() {
         proUsers: result.profiles?.filter((p: any) => p.plan === 'pro').length || 0,
         freeUsers: (result.profiles?.length || 0) - (result.profiles?.filter((p: any) => p.plan === 'pro').length || 0),
         pendingCount: result.pendingRequests?.length || 0,
-        totalRevenue: (result.profiles?.filter((p: any) => p.plan === 'pro').length || 0) * 29
+        totalRevenue: (result.profiles?.filter((p: any) => p.plan === 'pro').length || 0) * 15000 // 15,000 FCFA par mois
       })
 
     } catch (error) {
@@ -213,139 +214,148 @@ export function AdminDashboardClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header dashboard */}
-      <div className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" role="banner">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard Admin</h1>
-          <p className="text-slate-600 mt-1">Vue d'ensemble de la plateforme FACTURA</p>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{color: tokens.colors.gray[900]}}>Dashboard Admin</h1>
+          <p className="text-sm sm:text-base mt-1" style={{color: tokens.colors.gray[600]}}>Vue d'ensemble de la plateforme FACTURA</p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <div className="flex items-center gap-2 text-xs" style={{color: tokens.colors.gray[500]}}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{backgroundColor: tokens.colors.success[500]}} aria-hidden="true"></div>
           <span>Temps réel</span>
         </div>
-      </div>
+      </header>
 
       {/* Tableau de bord statistiques premium */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4" role="region" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="sr-only">Statistiques globales de la plateforme</h2>
+        <article className="group overflow-hidden rounded-xl border p-3 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="article">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <p className="text-xs uppercase tracking-wide font-medium" style={{color: tokens.colors.gray[600]}}>
               Revenus Totaux
             </p>
-            <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
-              <DollarSign size={16} className="text-green-600" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: tokens.colors.success[50]}}>
+                  <DollarSign size={16} className="md:size-20" style={{color: tokens.colors.success[600]}} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-green-600">{globalStats.totalRevenue.toLocaleString()}€</p>
+            <p className="text-lg sm:text-2xl font-bold" style={{color: tokens.colors.success[600]}}>{globalStats.totalRevenue.toLocaleString()} FCFA</p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">Estimation mensuelle</p>
-        </div>
+          <p className="text-xs mt-1" style={{color: tokens.colors.gray[500]}}>Estimation mensuelle (FCFA)</p>
+        </article>
 
-        <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+        <article className="group overflow-hidden rounded-xl border p-3 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="article">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <p className="text-xs uppercase tracking-wide font-medium" style={{color: tokens.colors.gray[600]}}>
               Total Factures
             </p>
-            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-              <FileText size={16} className="text-blue-600" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: tokens.colors.primary[50]}}>
+                  <FileText size={16} className="md:size-20" style={{color: tokens.colors.primary[600]}} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-blue-600">{globalStats.totalInvoices}</p>
+            <p className="text-lg sm:text-2xl font-bold" style={{color: tokens.colors.primary[600]}}>{globalStats.totalInvoices}</p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">{globalStats.totalQuotes} devis</p>
-        </div>
+          <p className="text-xs mt-1" style={{color: tokens.colors.gray[500]}}>{globalStats.totalQuotes} devis</p>
+        </article>
 
-        <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+        <article className="group overflow-hidden rounded-xl border p-3 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="article">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <p className="text-xs uppercase tracking-wide font-medium" style={{color: tokens.colors.gray[600]}}>
               Plans Pro
             </p>
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-              <CheckCircle size={16} className="text-white" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shadow-sm" style={{background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'}}>
+                  <CheckCircle size={16} className="md:size-20" style={{color: 'white'}} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-blue-600">{stats.proUsers}</p>
-            <span className="text-xs text-slate-500">actifs</span>
+            <p className="text-lg sm:text-2xl font-bold" style={{color: tokens.colors.primary[600]}}>{stats.proUsers}</p>
+            <span className="text-xs" style={{color: tokens.colors.gray[500]}}>actifs</span>
           </div>
-        </div>
+        </article>
 
-        <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
+        <article className="group overflow-hidden rounded-xl border p-3 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="article">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <p className="text-xs uppercase tracking-wide font-medium" style={{color: tokens.colors.gray[600]}}>
               Plans Free
             </p>
-            <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-              <Users size={16} className="text-slate-600" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: tokens.colors.gray[100]}}>
+                  <Users size={16} className="md:size-20" style={{color: tokens.colors.gray[600]}} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-slate-900">{stats.freeUsers}</p>
-            <span className="text-xs text-slate-500">actifs</span>
+            <p className="text-lg sm:text-2xl font-bold" style={{color: tokens.colors.gray[900]}}>{stats.freeUsers}</p>
+            <span className="text-xs" style={{color: tokens.colors.gray[500]}}>actifs</span>
           </div>
-        </div>
+        </article>
 
-        <div className="group overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-amber-600 uppercase tracking-wide font-medium">
+        <article className="group overflow-hidden rounded-xl border p-3 sm:p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" style={{background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)', borderColor: tokens.colors.warning[200]}} role="article">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <p className="text-xs uppercase tracking-wide font-medium" style={{color: tokens.colors.warning[600]}}>
               En Attente
             </p>
-            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center shadow-sm">
-              <Clock size={16} className="text-white" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shadow-sm" style={{backgroundColor: tokens.colors.warning[500]}}>
+                  <Clock size={16} className="md:size-20" style={{color: 'white'}} />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-2xl font-bold text-amber-600">{stats.pendingCount}</p>
-            <span className="text-xs text-amber-500">validations</span>
+            <p className="text-lg sm:text-2xl font-bold" style={{color: tokens.colors.warning[600]}}>{stats.pendingCount}</p>
+            <span className="text-xs" style={{color: tokens.colors.warning[500]}}>validations</span>
           </div>
-        </div>
+        </article>
       </section>
 
       {/* Actions rapides */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Demandes en attente */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="p-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
+        <article className="rounded-xl border shadow-sm" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="region" aria-labelledby="pending-heading">
+          <header className="p-4 sm:p-6 border-b" style={{borderColor: tokens.colors.gray[200]}}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                  <Clock size={20} className="text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{backgroundColor: tokens.colors.warning[500]}}>
+                  <Clock size={16} className="md:size-20" style={{color: 'white'}} />
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-900">Demandes en attente</h2>
-                  <p className="text-xs text-slate-500">{stats.pendingCount} validation{stats.pendingCount > 1 ? 's' : ''}</p>
+                  <h2 id="pending-heading" className="font-bold" style={{color: tokens.colors.gray[900]}}>Demandes en attente</h2>
+                  <p className="text-xs" style={{color: tokens.colors.gray[500]}}>{stats.pendingCount} validation{stats.pendingCount > 1 ? 's' : ''}</p>
                 </div>
               </div>
               <Link 
                 href="/admin/users" 
-                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="text-xs font-medium transition-colors"
+                style={{color: tokens.colors.primary[600]}}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = tokens.colors.primary[700]
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tokens.colors.primary[600]
+                }}
               >
                 Voir tout →
               </Link>
             </div>
-          </div>
+          </header>
           
-          <div className="p-6 space-y-3">
+          <div className="p-4 sm:p-6 space-y-3">
             {data.pendingRequests && data.pendingRequests.length > 0 ? (
               data.pendingRequests.slice(0, 3).map((req: any) => (
                 <div
                   key={req.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg"
+                  style={{backgroundColor: tokens.colors.gray[100]}}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                      <span className="text-amber-600 font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{backgroundColor: tokens.colors.warning[100]}}>
+                      <span className="font-bold text-xs" style={{color: tokens.colors.warning[600]}}>
                         {(req.profiles as any)?.company_name?.charAt(0).toUpperCase() || 'U'}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">
+                      <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>
                         {(req.profiles as any)?.company_name || 'Sans entreprise'}
                       </p>
-                      <p className="text-xs text-slate-500">{(req.profiles as any)?.email}</p>
+                      <p className="text-xs" style={{color: tokens.colors.gray[500]}}>{(req.profiles as any)?.email}</p>
                     </div>
                   </div>
                   <AdminActivateButton
@@ -357,114 +367,157 @@ export function AdminDashboardClient() {
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-500 text-sm py-4">Aucune demande en attente</p>
+              <p className="text-center text-sm py-4" style={{color: tokens.colors.gray[500]}}>Aucune demande en attente</p>
             )}
           </div>
-        </div>
+        </article>
 
         {/* Utilisateurs récents */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="p-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
+        <article className="rounded-xl border shadow-sm" style={{backgroundColor: tokens.colors.gray[50], borderColor: tokens.colors.gray[200]}} role="region" aria-labelledby="recent-users-heading">
+          <header className="p-4 sm:p-6 border-b" style={{borderColor: tokens.colors.gray[200]}}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <Users size={20} className="text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{backgroundColor: tokens.colors.primary[600]}}>
+                  <Users size={16} className="sm:size-20" style={{color: 'white'}} />
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-900">Utilisateurs récents</h2>
-                  <p className="text-xs text-slate-500">{stats.totalUsers} comptes totaux</p>
+                  <h2 id="recent-users-heading" className="font-bold" style={{color: tokens.colors.gray[900]}}>Utilisateurs récents</h2>
+                  <p className="text-xs" style={{color: tokens.colors.gray[500]}}>{stats.totalUsers} comptes totaux</p>
                 </div>
               </div>
               <Link 
                 href="/admin/users" 
-                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                className="text-xs font-medium transition-colors"
+                style={{color: tokens.colors.primary[600]}}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = tokens.colors.primary[700]
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = tokens.colors.primary[600]
+                }}
               >
                 Gérer →
               </Link>
             </div>
-          </div>
+          </header>
           
-          <div className="p-6 space-y-3">
+          <div className="p-4 sm:p-6 space-y-3">
             {data.profiles && data.profiles.length > 0 ? (
               data.profiles.slice(0, 3).map((profile: any) => (
-                <div key={profile.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div key={profile.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg" style={{backgroundColor: tokens.colors.gray[100]}}>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-bold text-xs">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{backgroundColor: tokens.colors.primary[100]}}>
+                      <span className="font-bold text-xs" style={{color: tokens.colors.primary[600]}}>
                         {(profile.company_name || profile.email || 'U').charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">
+                      <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>
                         {profile.company_name || 'Sans entreprise'}
                       </p>
-                      <p className="text-xs text-slate-500">{profile.email}</p>
+                      <p className="text-xs" style={{color: tokens.colors.gray[500]}}>{profile.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1">
                       {profile.plan === 'pro' ? (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">Pro</span>
+                        <span className="text-xs px-2 py-1 rounded-full font-medium" style={{backgroundColor: tokens.colors.primary[100], color: tokens.colors.primary[700]}}>Pro</span>
                       ) : (
-                        <span className="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-medium">Free</span>
+                        <span className="text-xs px-2 py-1 rounded-full font-medium" style={{backgroundColor: tokens.colors.gray[100], color: tokens.colors.gray[700]}}>Free</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">Inscrit le {formatDate(profile.created_at)}</p>
+                    <p className="text-xs mt-1" style={{color: tokens.colors.gray[500]}}>Inscrit le {formatDate(profile.created_at)}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-slate-500 text-sm py-4">Aucun utilisateur</p>
+              <p className="text-center text-sm py-4" style={{color: tokens.colors.gray[500]}}>Aucun utilisateur</p>
             )}
           </div>
-        </div>
+        </article>
       </section>
 
       {/* Navigation rapide */}
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-        <h2 className="font-bold text-slate-900 mb-4">Navigation rapide</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="rounded-xl border p-4 sm:p-6" style={{background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', borderColor: tokens.colors.primary[200]}} role="region" aria-labelledby="nav-heading">
+        <h2 id="nav-heading" className="font-bold mb-4" style={{color: tokens.colors.gray[900]}}>Navigation rapide</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Link 
             href="/admin/users" 
-            className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:-translate-y-1"
+            style={{backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: tokens.colors.gray[200]}}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = tokens.colors.primary[50]
+              e.currentTarget.style.borderColor = tokens.colors.primary[300]
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.borderColor = tokens.colors.gray[200]
+            }}
           >
-            <Users size={20} className="text-blue-600" />
+            <Users size={20} style={{color: tokens.colors.primary[600]}} />
             <div>
-              <p className="font-medium text-slate-900">Utilisateurs</p>
-              <p className="text-xs text-slate-500">Gérer les comptes</p>
+              <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>Utilisateurs</p>
+              <p className="text-xs" style={{color: tokens.colors.gray[500]}}>Gérer les comptes</p>
             </div>
           </Link>
           
           <Link 
             href="/admin/plans" 
-            className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:-translate-y-1"
+            style={{backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: tokens.colors.gray[200]}}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = tokens.colors.primary[50]
+              e.currentTarget.style.borderColor = tokens.colors.primary[300]
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.borderColor = tokens.colors.gray[200]
+            }}
           >
-            <CreditCard size={20} className="text-green-600" />
+            <CreditCard size={20} style={{color: tokens.colors.success[600]}} />
             <div>
-              <p className="font-medium text-slate-900">Forfaits</p>
-              <p className="text-xs text-slate-500">Plans et limites</p>
+              <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>Forfaits</p>
+              <p className="text-xs" style={{color: tokens.colors.gray[500]}}>Plans et limites</p>
             </div>
           </Link>
           
           <Link 
             href="/admin/analytics" 
-            className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:-translate-y-1"
+            style={{backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: tokens.colors.gray[200]}}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = tokens.colors.primary[50]
+              e.currentTarget.style.borderColor = tokens.colors.primary[300]
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.borderColor = tokens.colors.gray[200]
+            }}
           >
-            <BarChart3 size={20} className="text-purple-600" />
+            <BarChart3 size={20} style={{color: tokens.colors.secondary[600]}} />
             <div>
-              <p className="font-medium text-slate-900">Statistiques</p>
-              <p className="text-xs text-slate-500">Analytics détaillés</p>
+              <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>Statistiques</p>
+              <p className="text-xs" style={{color: tokens.colors.gray[500]}}>Analytics détaillés</p>
             </div>
           </Link>
           
           <Link 
             href="/admin/settings" 
-            className="flex items-center gap-3 p-4 bg-white rounded-xl border border-slate-200 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:-translate-y-1"
+            style={{backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: tokens.colors.gray[200]}}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = tokens.colors.primary[50]
+              e.currentTarget.style.borderColor = tokens.colors.primary[300]
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.borderColor = tokens.colors.gray[200]
+            }}
           >
-            <Settings size={20} className="text-slate-600" />
+            <Settings size={20} style={{color: tokens.colors.gray[600]}} />
             <div>
-              <p className="font-medium text-slate-900">Paramètres</p>
-              <p className="text-xs text-slate-500">Configuration</p>
+              <p className="font-medium text-sm" style={{color: tokens.colors.gray[900]}}>Paramètres</p>
+              <p className="text-xs" style={{color: tokens.colors.gray[500]}}>Configuration</p>
             </div>
           </Link>
         </div>
