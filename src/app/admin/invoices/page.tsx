@@ -93,8 +93,15 @@ export default async function AdminInvoicesPage() {
   const totalInvoices = invoices?.filter((inv: any) => inv.type === 'invoice').length || 0
   const totalQuotes = invoices?.filter((inv: any) => inv.type === 'quote').length || 0
   const paidInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'paid').length || 0
-  const pendingInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'pending').length || 0
-  const overdueInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'overdue').length || 0
+  const sentInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'sent').length || 0
+  const draftInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'draft').length || 0
+  const cancelledInvoices = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'cancelled').length || 0
+  
+  // Pour les devis : acceptés, refusés, brouillons, envoyés
+  const acceptedQuotes = invoices?.filter((inv: any) => inv.type === 'quote' && inv.status === 'accepted').length || 0
+  const refusedQuotes = invoices?.filter((inv: any) => inv.type === 'quote' && inv.status === 'refused').length || 0
+  const sentQuotes = invoices?.filter((inv: any) => inv.type === 'quote' && inv.status === 'sent').length || 0
+  const draftQuotes = invoices?.filter((inv: any) => inv.type === 'quote' && inv.status === 'draft').length || 0
   
   const totalRevenue = invoices?.filter((inv: any) => inv.type === 'invoice' && inv.status === 'paid')
     .reduce((sum: number, inv: any) => sum + inv.total, 0) || 0
@@ -190,6 +197,47 @@ export default async function AdminInvoicesPage() {
         </div>
       </section>
 
+      {/* Statistiques détaillées */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-600">Factures Envoyées</span>
+            <Calendar size={16} className="text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold text-blue-600">{sentInvoices}</div>
+          <div className="text-xs text-slate-500 mt-1">En attente de paiement</div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-600">Factures Brouillons</span>
+            <Clock size={16} className="text-gray-600" />
+          </div>
+          <div className="text-2xl font-bold text-gray-600">{draftInvoices}</div>
+          <div className="text-xs text-slate-500 mt-1">Non envoyées</div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-600">Devis Acceptés</span>
+            <CheckCircle size={16} className="text-green-600" />
+          </div>
+          <div className="text-2xl font-bold text-green-600">{acceptedQuotes}</div>
+          <div className="text-xs text-slate-500 mt-1">
+            {totalQuotes > 0 ? ((acceptedQuotes / totalQuotes) * 100).toFixed(1) : 0}% de conversion
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-600">Documents Annulés</span>
+            <AlertCircle size={16} className="text-red-600" />
+          </div>
+          <div className="text-2xl font-bold text-red-600">{cancelledInvoices}</div>
+          <div className="text-xs text-slate-500 mt-1">Factures annulées</div>
+        </div>
+      </section>
+
       {/* Filtres et recherche */}
       <section className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex flex-col md:flex-row gap-4">
@@ -210,9 +258,11 @@ export default async function AdminInvoicesPage() {
             <select className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tous les statuts</option>
               <option value="paid">Payées</option>
-              <option value="pending">En attente</option>
-              <option value="overdue">En retard</option>
+              <option value="sent">Envoyées</option>
+              <option value="draft">Brouillons</option>
               <option value="cancelled">Annulées</option>
+              <option value="accepted">Acceptés (devis)</option>
+              <option value="refused">Refusés (devis)</option>
             </select>
             <select className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Tous les plans</option>
@@ -307,15 +357,19 @@ export default async function AdminInvoicesPage() {
                   <td className="text-center py-3 px-4">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                       invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
-                      invoice.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                      invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                      invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                      invoice.status === 'draft' ? 'bg-gray-100 text-gray-700' :
                       invoice.status === 'cancelled' ? 'bg-slate-100 text-slate-700' :
+                      invoice.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                      invoice.status === 'refused' ? 'bg-red-100 text-red-700' :
                       'bg-slate-100 text-slate-700'
                     }`}>
                       {invoice.status === 'paid' ? 'Payée' :
-                       invoice.status === 'pending' ? 'En attente' :
-                       invoice.status === 'overdue' ? 'En retard' :
+                       invoice.status === 'sent' ? 'Envoyée' :
+                       invoice.status === 'draft' ? 'Brouillon' :
                        invoice.status === 'cancelled' ? 'Annulée' :
+                       invoice.status === 'accepted' ? 'Accepté' :
+                       invoice.status === 'refused' ? 'Refusé' :
                        invoice.status}
                     </span>
                   </td>
