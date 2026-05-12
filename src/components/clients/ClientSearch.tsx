@@ -143,11 +143,6 @@ export default function ClientSearch({
 
   return (
     <div ref={searchRef} className={`relative ${className}`}>
-      {/* Label */}
-      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-        Client
-      </label>
-      
       {/* Champ de recherche */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

@@ -221,7 +221,7 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
           <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-1">Création</p>
             <h1 className="text-2xl font-bold text-slate-900 capitalize sm:text-3xl">
-              Nouveau {label}
+              {isInvoice ? 'Nouvelle' : 'Nouveau'} {label}
             </h1>
             <p className="text-slate-500 text-sm mt-1">Remplissez les informations ci-dessous pour créer votre {label}</p>
           </div>

@@ -37,7 +37,7 @@ export default async function FacturesPage() {
                 <Receipt size={20} className="text-white" />
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-blue-600">Module Factures</p>
+                <p className="text-xs font-bold tracking-wider text-blue-600">Module Factures</p>
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 mt-1">Factures</h1>
               </div>
             </div>

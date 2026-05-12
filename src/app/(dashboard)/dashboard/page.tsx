@@ -63,7 +63,7 @@ export default async function DashboardPage() {
     <main className="space-y-5 pb-24 sm:space-y-6 sm:pb-8">
       <section className="rounded-2xl border border-blue-200/50 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
             <Image 
               src="/icon-192.png" 
               alt="Factura Logo"
@@ -74,14 +74,11 @@ export default async function DashboardPage() {
               priority
             />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Dashboard Factura</p>
+              <p className="text-xs font-semibold tracking-wide text-blue-600">Dashboard Factura</p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                 Bonjour, {greetingName}
               </h1>
-              <p className="text-slate-600 mb-6 leading-relaxed">Créez votre première fiche client pour démarrer.</p>
-              <ul>
-                <li>Vos données sont modifiables à tout moment.</li>
-              </ul>
+              <p className="text-slate-600 mb-4 leading-relaxed">Créez votre première fiche client pour démarrer.</p>
             </div>
           </div>
           <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">

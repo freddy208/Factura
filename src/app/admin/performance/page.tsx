@@ -326,11 +326,11 @@ export default async function AdminPerformancePage() {
             <div className="space-y-2">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">Utilisation</span>
+                  <span style={{color: tokens.colors.gray[600]}}>Utilisation</span>
                   <span className="font-medium">{systemMetrics.memory.percentage}%</span>
                 </div>
                 <div 
-                  className="w-full bg-slate-100 rounded-full h-2 overflow-hidden"
+                  style={{backgroundColor: tokens.colors.gray[100]}}
                   role="progressbar"
                   aria-valuenow={systemMetrics.memory.percentage}
                   aria-valuemin={0}
@@ -346,7 +346,7 @@ export default async function AdminPerformancePage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div style={{color: tokens.colors.gray[500]}}>
                 <span>{(systemMetrics.memory.used / 1024).toFixed(1)}GB utilisés</span>
                 <span>{(systemMetrics.memory.total / 1024).toFixed(1)}GB total</span>
               </div>
@@ -376,11 +376,11 @@ export default async function AdminPerformancePage() {
             <div className="space-y-2">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">Utilisation</span>
+                  <span style={{color: tokens.colors.gray[600]}}>Utilisation</span>
                   <span className="font-medium">{systemMetrics.disk.percentage}%</span>
                 </div>
                 <div 
-                  className="w-full bg-slate-100 rounded-full h-2 overflow-hidden"
+                  style={{backgroundColor: tokens.colors.gray[100]}}
                   role="progressbar"
                   aria-valuenow={systemMetrics.disk.percentage}
                   aria-valuemin={0}
@@ -396,7 +396,7 @@ export default async function AdminPerformancePage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div style={{color: tokens.colors.gray[500]}}>
                 <span>{(systemMetrics.disk.used / 1024).toFixed(1)}GB utilisés</span>
                 <span>{(systemMetrics.disk.total / 1024).toFixed(1)}GB total</span>
               </div>
@@ -425,11 +425,11 @@ export default async function AdminPerformancePage() {
             <div className="space-y-2">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">Connexions</span>
+                  <span style={{color: tokens.colors.gray[600]}}>Connexions</span>
                   <span className="font-medium">{systemMetrics.database.connections}/{systemMetrics.database.maxConnections}</span>
                 </div>
                 <div 
-                  className="w-full bg-slate-100 rounded-full h-2 overflow-hidden"
+                  style={{backgroundColor: tokens.colors.gray[100]}}
                   role="progressbar"
                   aria-valuenow={systemMetrics.database.connections}
                   aria-valuemin={0}
@@ -445,7 +445,7 @@ export default async function AdminPerformancePage() {
                   />
                 </div>
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div style={{color: tokens.colors.gray[500]}}>
                 <span>Temps requête</span>
                 <span>{systemMetrics.database.queryTime}ms</span>
               </div>
@@ -453,11 +453,17 @@ export default async function AdminPerformancePage() {
           </div>
 
           {/* Réseau */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="network-metric-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="network-metric-title">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Network size={20} className="text-indigo-600" />
-                <span id="network-metric-title" className="font-medium text-slate-900">Réseau</span>
+                <span id="network-metric-title" style={{color: tokens.colors.gray[900]}}>Réseau</span>
               </div>
               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                 systemMetrics.network.status === 'normal' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -467,10 +473,10 @@ export default async function AdminPerformancePage() {
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Bande passante</span>
+                <span style={{color: tokens.colors.gray[600]}}>Bande passante</span>
                 <span className="font-medium">{systemMetrics.network.bandwidth} Mbps</span>
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div style={{color: tokens.colors.gray[500]}}>
                 <span>Latence: {systemMetrics.network.latency}ms</span>
                 <span>Uptime: {systemMetrics.network.uptime}%</span>
               </div>
@@ -478,11 +484,17 @@ export default async function AdminPerformancePage() {
           </div>
 
           {/* Performance API */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="api-metric-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="api-metric-title">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Zap size={20} className="text-orange-600" />
-                <span id="api-metric-title" className="font-medium text-slate-900">Performance API</span>
+                <span id="api-metric-title" style={{color: tokens.colors.gray[900]}}>Performance API</span>
               </div>
               <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
                 Normal
@@ -490,10 +502,10 @@ export default async function AdminPerformancePage() {
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Temps réponse</span>
+                <span style={{color: tokens.colors.gray[600]}}>Temps réponse</span>
                 <span className="font-medium">{avgResponseTime}ms</span>
               </div>
-              <div className="flex justify-between text-xs text-slate-500">
+              <div style={{color: tokens.colors.gray[500]}}>
                 <span>Taux erreur: {errorRate}%</span>
                 <span>Débit: {throughput} req/min</span>
               </div>
@@ -504,44 +516,68 @@ export default async function AdminPerformancePage() {
 
       {/* Métriques d'utilisation */}
       <section role="region" aria-labelledby="usage-metrics-heading" className="space-y-4">
-        <h2 id="usage-metrics-heading" className="text-xl font-bold text-slate-900">Métriques d'Utilisation</h2>
+        <h2 id="usage-metrics-heading" style={{color: tokens.colors.gray[900]}} className="text-xl font-bold">Métriques d'Utilisation</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="active-users-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="active-users-title">
             <div className="flex items-center justify-between mb-2">
-              <span id="active-users-title" className="text-sm text-slate-600">Utilisateurs actifs (24h)</span>
+              <span id="active-users-title" style={{color: tokens.colors.gray[600]}} className="text-sm">Utilisateurs actifs (24h)</span>
               <Users size={16} className="text-blue-600" aria-hidden="true" />
             </div>
-            <div className="text-2xl font-bold text-slate-900">{activeUsers24h}</div>
-            <div className="text-xs text-slate-500 mt-1">{activeUsers7d} sur 7 jours</div>
+            <div style={{color: tokens.colors.gray[900]}} className="text-2xl font-bold">{activeUsers24h}</div>
+            <div style={{color: tokens.colors.gray[500]}} className="text-xs mt-1">{activeUsers7d} sur 7 jours</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="invoices-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="invoices-title">
             <div className="flex items-center justify-between mb-2">
-              <span id="invoices-title" className="text-sm text-slate-600">Factures (24h)</span>
+              <span id="invoices-title" style={{color: tokens.colors.gray[600]}} className="text-sm">Factures (24h)</span>
               <FileText size={16} className="text-green-600" aria-hidden="true" />
             </div>
-            <div className="text-2xl font-bold text-slate-900">{invoices24h}</div>
-            <div className="text-xs text-slate-500 mt-1">{invoices7d} sur 7 jours</div>
+            <div style={{color: tokens.colors.gray[900]}} className="text-2xl font-bold">{invoices24h}</div>
+            <div style={{color: tokens.colors.gray[500]}} className="text-xs mt-1">{invoices7d} sur 7 jours</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="total-users-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="total-users-title">
             <div className="flex items-center justify-between mb-2">
-              <span id="total-users-title" className="text-sm text-slate-600">Total utilisateurs</span>
+              <span id="total-users-title" style={{color: tokens.colors.gray[600]}} className="text-sm">Total utilisateurs</span>
               <BarChart3 size={16} className="text-purple-600" aria-hidden="true" />
             </div>
-            <div className="text-2xl font-bold text-slate-900">{profiles?.length || 0}</div>
-            <div className="text-xs text-slate-500 mt-1">{activeUsers30d} actifs (30j)</div>
+            <div style={{color: tokens.colors.gray[900]}} className="text-2xl font-bold">{profiles?.length || 0}</div>
+            <div style={{color: tokens.colors.gray[500]}} className="text-xs mt-1">{activeUsers30d} actifs (30j)</div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-4" role="article" aria-labelledby="activity-rate-title">
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: tokens.borderRadius.xl,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: tokens.colors.gray[200]
+          }} role="article" aria-labelledby="activity-rate-title">
             <div className="flex items-center justify-between mb-2">
-              <span id="activity-rate-title" className="text-sm text-slate-600">Taux d'activité</span>
+              <span id="activity-rate-title" style={{color: tokens.colors.gray[600]}} className="text-sm">Taux d'activité</span>
               <Activity size={16} className="text-amber-600" aria-hidden="true" />
             </div>
-            <div className="text-2xl font-bold text-slate-900">
+            <div style={{color: tokens.colors.gray[900]}} className="text-2xl font-bold">
               {profiles?.length ? ((activeUsers30d / profiles.length) * 100).toFixed(1) : 0}%
             </div>
-            <div className="text-xs text-slate-500 mt-1">30 derniers jours</div>
+            <div style={{color: tokens.colors.gray[500]}} className="text-xs mt-1">30 derniers jours</div>
           </div>
         </div>
       </section>
@@ -550,17 +586,23 @@ export default async function AdminPerformancePage() {
       <section role="region" aria-labelledby="charts-heading" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <h2 id="charts-heading" className="sr-only">Graphiques de performance</h2>
         {/* Activité horaire */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6" role="region" aria-labelledby="hourly-activity-title">
-          <h3 id="hourly-activity-title" className="text-lg font-bold text-slate-900 mb-4">Activité des 24 dernières heures</h3>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: tokens.borderRadius.xl,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: tokens.colors.gray[200]
+        }} role="region" aria-labelledby="hourly-activity-title">
+          <h3 id="hourly-activity-title" style={{color: tokens.colors.gray[900]}} className="text-lg font-bold mb-4">Activité des 24 dernières heures</h3>
           <div className="space-y-3">
             {hourlyData.slice(-12).map((data, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="w-12 text-xs font-medium text-slate-600">{data.hour}h</div>
+                <div style={{color: tokens.colors.gray[600]}} className="w-12 text-xs font-medium">{data.hour}h</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs text-slate-500 w-16">Requêtes</div>
+                    <div style={{color: tokens.colors.gray[500]}} className="text-xs w-16">Requêtes</div>
                     <div 
-                      className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden"
+                      style={{backgroundColor: tokens.colors.gray[100]}}
                       role="progressbar"
                       aria-valuenow={data.requests}
                       aria-valuemin={0}
@@ -572,10 +614,10 @@ export default async function AdminPerformancePage() {
                         style={{ width: `${(data.requests / Math.max(...hourlyData.map(d => d.requests))) * 100}%` }}
                       />
                     </div>
-                    <div className="text-xs font-medium text-slate-900 w-12 text-right">{data.requests}</div>
+                    <div style={{color: tokens.colors.gray[900]}} className="text-xs font-medium w-12 text-right">{data.requests}</div>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="text-xs text-slate-500 w-16">Erreurs</div>
+                    <div style={{color: tokens.colors.gray[500]}} className="text-xs w-16">Erreurs</div>
                     <div 
                       className="flex-1 bg-slate-100 rounded-full h-1 overflow-hidden"
                       role="progressbar"
@@ -589,7 +631,7 @@ export default async function AdminPerformancePage() {
                         style={{ width: `${(data.errors / Math.max(...hourlyData.map(d => d.errors))) * 100}%` }}
                       />
                     </div>
-                    <div className="text-xs font-medium text-red-600 w-12 text-right">{data.errors}</div>
+                    <div style={{color: tokens.colors.error[600]}} className="text-xs font-medium text-error-600 w-12 text-right">{data.errors}</div>
                   </div>
                 </div>
               </div>
@@ -598,17 +640,23 @@ export default async function AdminPerformancePage() {
         </div>
 
         {/* Activité hebdomadaire */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6" role="region" aria-labelledby="weekly-activity-title">
-          <h3 id="weekly-activity-title" className="text-lg font-bold text-slate-900 mb-4">Activité de la semaine</h3>
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: tokens.borderRadius.xl,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: tokens.colors.gray[200]
+        }} role="region" aria-labelledby="weekly-activity-title">
+          <h3 id="weekly-activity-title" style={{color: tokens.colors.gray[900]}} className="text-lg font-bold mb-4">Activité de la semaine</h3>
           <div className="space-y-4">
             {dailyData.map((data, index) => (
               <div key={index} className="flex items-center gap-4">
-                <div className="w-16 text-sm font-medium text-slate-600">{data.date}</div>
+                <div style={{color: tokens.colors.gray[600]}} className="w-16 text-sm font-medium">{data.date}</div>
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="text-xs text-slate-500 w-12">Users</div>
+                    <div style={{color: tokens.colors.gray[500]}} className="text-xs w-12">Users</div>
                     <div 
-                      className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden"
+                      style={{backgroundColor: tokens.colors.gray[100]}}
                       role="progressbar"
                       aria-valuenow={data.users}
                       aria-valuemin={0}
@@ -620,12 +668,12 @@ export default async function AdminPerformancePage() {
                         style={{ width: `${(data.users / Math.max(...dailyData.map(d => d.users))) * 100}%` }}
                       />
                     </div>
-                    <div className="text-xs font-medium text-slate-900 w-8 text-right">{data.users}</div>
+                    <div style={{color: tokens.colors.gray[900]}} className="text-xs font-medium w-8 text-right">{data.users}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-xs text-slate-500 w-12">Fact.</div>
+                    <div style={{color: tokens.colors.gray[500]}} className="text-xs w-12">Fact.</div>
                     <div 
-                      className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden"
+                      style={{backgroundColor: tokens.colors.gray[100]}}
                       role="progressbar"
                       aria-valuenow={data.invoices}
                       aria-valuemin={0}
@@ -641,7 +689,7 @@ export default async function AdminPerformancePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-green-600">{(data.revenue / 1000).toFixed(1)}k€</div>
+                  <div style={{color: tokens.colors.success[600]}} className="text-sm font-bold">{(data.revenue / 1000).toFixed(1)}k FCFA</div>
                   <div className="text-xs text-slate-500">revenus</div>
                 </div>
               </div>
@@ -651,9 +699,15 @@ export default async function AdminPerformancePage() {
       </section>
 
       {/* Alertes et monitoring */}
-      <section role="region" aria-labelledby="monitoring-heading" className="bg-white rounded-xl border border-slate-200 p-6">
+      <section role="region" aria-labelledby="monitoring-heading" style={{
+        backgroundColor: 'white',
+        borderRadius: tokens.borderRadius.xl,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: tokens.colors.gray[200]
+      }} className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 id="monitoring-heading" className="text-lg font-bold text-slate-900">Alertes et Monitoring</h3>
+          <h3 id="monitoring-heading" style={{color: tokens.colors.gray[900]}} className="text-lg font-bold">Alertes et Monitoring</h3>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" aria-hidden="true"></span>
             <span role="status" aria-live="polite" className="text-sm text-green-700 font-medium">Système opérationnel</span>
@@ -662,7 +716,7 @@ export default async function AdminPerformancePage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
-            <h4 className="font-medium text-slate-900">Services actifs</h4>
+            <h4 style={{color: tokens.colors.gray[900]}} className="font-medium">Services actifs</h4>
             <div className="space-y-2" role="list">
               <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg" role="listitem">
                 <div className="flex items-center gap-2">
@@ -696,14 +750,14 @@ export default async function AdminPerformancePage() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-medium text-slate-900">Métriques de santé</h4>
+            <h3 style={{color: tokens.colors.gray[900]}} className="font-medium">Authentification à deux facteurs</h3>
             <div className="space-y-2" role="list">
               <div className="flex justify-between p-2 bg-slate-50 rounded-lg" role="listitem">
                 <span className="text-sm text-slate-600">Uptime global</span>
                 <span className="text-sm font-bold text-green-600" aria-label="Uptime: 99.9%">99.9%</span>
               </div>
               <div className="flex justify-between p-2 bg-slate-50 rounded-lg" role="listitem">
-                <span className="text-sm text-slate-600">Temps de réponse moyen</span>
+                <p style={{color: tokens.colors.gray[500]}} className="text-sm mt-1">Renforce la sécurité des comptes</p>
                 <span className="text-sm font-bold text-blue-600" aria-label={`Temps de réponse: ${avgResponseTime}ms`}>{avgResponseTime}ms</span>
               </div>
               <div className="flex justify-between p-2 bg-slate-50 rounded-lg" role="listitem">

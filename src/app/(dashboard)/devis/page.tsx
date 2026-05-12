@@ -27,7 +27,7 @@ export default async function DevisPage() {
               <FileText size={20} className="text-white hidden sm:block" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Gestion des Devis</p>
+              <p className="text-xs font-semibold tracking-wide text-indigo-600">Gestion des Devis</p>
               <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
                 Devis
               </h1>
@@ -39,9 +39,10 @@ export default async function DevisPage() {
           <Link
             href="/devis/nouveau"
             className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700
-                      text-white font-semibold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-sm sm:text-base"
+                      text-white font-semibold px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 text-sm sm:text-base"
           >
             <Plus size={16} />
+            <span className="sm:hidden"> Nouveau devis</span>
             <span className="hidden sm:inline">Nouveau devis</span>
           </Link>
         </div>

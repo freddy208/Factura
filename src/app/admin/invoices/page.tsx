@@ -163,8 +163,8 @@ export default async function AdminInvoicesPage() {
             <span className="text-sm text-slate-600">Revenus Totaux</span>
             <DollarSign size={16} className="text-green-600" />
           </div>
-          <div className="text-2xl font-bold text-green-600">{totalRevenue.toLocaleString()}€</div>
-          <div className="text-xs text-slate-500 mt-1">{thisMonthRevenue.toLocaleString()}€ ce mois</div>
+          <div className="text-2xl font-bold text-green-600">{totalRevenue.toLocaleString()} FCFA</div>
+          <div className="text-xs text-slate-500 mt-1">{thisMonthRevenue.toLocaleString()} FCFA ce mois</div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -302,7 +302,7 @@ export default async function AdminInvoicesPage() {
                     </div>
                   </td>
                   <td className="text-center py-3 px-4">
-                    <span className="font-bold text-slate-900">{invoice.total?.toLocaleString() || 0}€</span>
+                    <span className="font-bold text-slate-900">{invoice.total?.toLocaleString() || 0} FCFA</span>
                   </td>
                   <td className="text-center py-3 px-4">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -373,7 +373,7 @@ export default async function AdminInvoicesPage() {
               </div>
               <div className="text-right">
                 <div className="font-bold text-slate-900">{user.invoiceCount}</div>
-                <div className="text-xs text-green-600">{user.revenue.toLocaleString()}€</div>
+                <div className="text-xs text-green-600">{user.revenue.toLocaleString()} FCFA</div>
               </div>
             </div>
           ))}

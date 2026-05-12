@@ -292,9 +292,9 @@ export default async function AdminAnalyticsPage() {
               {Math.abs(revenueGrowth).toFixed(1)}%
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900 mb-1" id="kpi-revenue-title">{totalRevenue.toLocaleString()}€</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1" id="kpi-revenue-title">{totalRevenue.toLocaleString()} FCFA</div>
           <div className="text-sm text-slate-600">Revenus totaux</div>
-          <div className="text-xs text-slate-500 mt-2">{thisMonthRevenue.toLocaleString()}€ ce mois</div>
+          <div className="text-xs text-slate-500 mt-2">{thisMonthRevenue.toLocaleString()} FCFA ce mois</div>
         </article>
 
         <article className="bg-white rounded-xl border border-slate-200 p-6" role="article" aria-labelledby="kpi-invoices-title">
@@ -361,10 +361,10 @@ export default async function AdminAnalyticsPage() {
                           backgroundColor: tokens.colors.success[600],
                           width: `${(data.revenue / Math.max(...monthlyData.map((d: any) => d.revenue))) * 100}%` 
                         }}
-                        aria-label={`${(data.revenue / 1000).toFixed(1)}k€ de revenus en ${data.month}`}
+                        aria-label={`${(data.revenue / 1000).toFixed(1)}k FCFA de revenus en ${data.month}`}
                       />
                     </div>
-                    <div className="text-xs font-medium text-slate-900 w-16 text-right">{(data.revenue / 1000).toFixed(1)}k€</div>
+                    <div className="text-xs font-medium text-slate-900 w-16 text-right">{(data.revenue / 1000).toFixed(1)}k FCFA</div>
                   </div>
                 </div>
               </div>
@@ -427,7 +427,7 @@ export default async function AdminAnalyticsPage() {
             <div className="pt-4 border-t border-slate-100">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold" style={{ color: tokens.colors.success[600] }}>{(proUsers * 29).toLocaleString()}€</div>
+                  <div className="text-2xl font-bold" style={{ color: tokens.colors.success[600] }}>{(proUsers * 15000).toLocaleString()} FCFA</div>
                   <div className="text-xs text-slate-500">Revenus mensuels</div>
                 </div>
                 <div className="text-center">
@@ -492,7 +492,7 @@ export default async function AdminAnalyticsPage() {
                     <span className="text-sm font-medium text-slate-900">{user.invoiceCount}</span>
                   </td>
                   <td className="text-center py-3 px-4">
-                    <span className="text-sm font-bold" style={{ color: tokens.colors.success[600] }}>{user.revenue.toLocaleString()}€</span>
+                    <span className="text-sm font-bold" style={{ color: tokens.colors.success[600] }}>{user.revenue.toLocaleString()} FCFA</span>
                   </td>
                   <td className="text-center py-3 px-4">
                     <span className="text-xs px-2 py-1 rounded-full" style={{
@@ -534,7 +534,7 @@ export default async function AdminAnalyticsPage() {
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">Revenu moyen</span>
               <span className="text-sm font-bold text-slate-900">
-                {proUsers > 0 ? (totalRevenue / proUsers).toFixed(0) : 0}€
+                {proUsers > 0 ? (totalRevenue / proUsers).toFixed(0) : 0} FCFA
               </span>
             </div>
           </div>

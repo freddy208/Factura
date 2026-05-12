@@ -83,7 +83,7 @@ export default async function AdminPlansPage() {
       id: 'free',
       name: 'Free',
       description: 'Pour les freelances débutants',
-      price: '0€',
+      price: '0 FCFA',
       period: '/mois',
       icon: Users,
       color: 'slate',
@@ -108,7 +108,7 @@ export default async function AdminPlansPage() {
       id: 'pro',
       name: 'Pro',
       description: 'Pour les professionnels',
-      price: `${PLAN_PRICING.pro.monthly_eur}€`,
+      price: `${PLAN_PRICING.pro.monthly_fcfa} FCFA`,
       period: '/mois',
       icon: Crown,
       color: 'blue',
@@ -131,7 +131,7 @@ export default async function AdminPlansPage() {
         storage: `${PLAN_LIMITS.pro.storage_gb}Go`
       },
       users: proUsers.length,
-      revenue: proUsers.length * PLAN_PRICING.pro.monthly_eur
+      revenue: proUsers.length * PLAN_PRICING.pro.monthly_fcfa
     }
   ]
 
@@ -156,7 +156,7 @@ export default async function AdminPlansPage() {
             <span className="text-sm text-blue-100">Revenus mensuels</span>
             <DollarSign size={20} className="text-blue-200" />
           </div>
-          <div className="text-3xl font-bold">{(proUsers.length * PLAN_PRICING.pro.monthly_eur).toLocaleString()}€</div>
+          <div className="text-3xl font-bold">{(proUsers.length * PLAN_PRICING.pro.monthly_fcfa).toLocaleString()} FCFA</div>
           <div className="text-xs text-blue-100 mt-1">{proUsers.length} abonnés Pro</div>
         </div>
 
@@ -266,7 +266,7 @@ export default async function AdminPlansPage() {
                     </div>
                     <div>
                       <div className={`text-2xl font-bold ${isPopular ? 'text-blue-900' : 'text-slate-900'}`}>
-                        {plan.revenue.toLocaleString()}€
+                        {plan.revenue.toLocaleString()} FCFA
                       </div>
                       <div className={`text-xs ${isPopular ? 'text-blue-700' : 'text-slate-600'}`}>
                         Revenus mensuels
@@ -427,7 +427,7 @@ export default async function AdminPlansPage() {
                     <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
                       Free → Pro
                     </span>
-                    <span className="text-sm font-bold text-amber-600">+29€/mois</span>
+                    <span className="text-sm font-bold text-amber-600">+15,000 FCFA/mois</span>
                   </div>
                 </div>
               </div>

@@ -576,13 +576,13 @@ export default async function AdminSettingsPage() {
               </p>
             </div>
             <div>
-              <label htmlFor="pro-price-eur" className="block text-sm font-medium mb-2" style={{color: tokens.colors.gray[700]}}>
-                Prix Pro (€/mois)
+              <label htmlFor="trial-days" className="block text-sm font-medium mb-2" style={{color: tokens.colors.gray[700]}}>
+                Jours d'essai
               </label>
               <input
-                id="pro-price-eur"
+                id="trial-days"
                 type="number"
-                defaultValue={config.plans.proPrice}
+                defaultValue={config.plans.trialDays}
                 className="w-full px-3 py-2 rounded-lg transition-colors"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -597,10 +597,10 @@ export default async function AdminSettingsPage() {
                   e.currentTarget.style.borderColor = tokens.colors.gray[200]
                   e.currentTarget.style.boxShadow = 'none'
                 }}
-                aria-describedby="pro-price-eur-description"
+                aria-describedby="trial-days-description"
               />
-              <p id="pro-price-eur-description" className="text-sm mt-1" style={{color: tokens.colors.gray[500]}}>
-                Prix mensuel en euros
+              <p id="trial-days-description" className="text-sm mt-1" style={{color: tokens.colors.gray[500]}}>
+                Durée de la période d'essai en jours
               </p>
             </div>
             <div>
