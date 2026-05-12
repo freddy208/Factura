@@ -4,6 +4,9 @@ import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { usePremiumModal } from '@/hooks/usePremiumModal'
+import { validateAndSanitizeItem, validateTaxRate, validateCurrency, sanitizeNotes } from '@/lib/security/sanitize'
+import ClientSearch from '@/components/clients/ClientSearch'
 
 type Item = {
   id: string
@@ -13,11 +16,6 @@ type Item = {
   total: number
 }
 
-type Client = {
-  id: string
-  name: string
-  company: string | null
-}
 
 type InvoiceFormProps = {
   type: 'invoice' | 'quote'
@@ -30,7 +28,7 @@ function generateId() {
 
 export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps) {
   const router = useSafeRouter()
-  const [clients, setClients] = useState<Client[]>([])
+  const { alert, ModalComponent } = usePremiumModal()
   const [selectedClient, setSelectedClient] = useState(defaultClientId || '')
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
@@ -46,17 +44,6 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
   const label = isInvoice ? 'facture' : 'devis'
   const backHref = isInvoice ? '/factures' : '/devis'
 
-  useEffect(() => {
-    async function loadClients() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('clients')
-        .select('id, name, company')
-        .order('name')
-      setClients((data as Client[]) || [])
-    }
-    loadClients()
-  }, [])
 
   function updateItem(id: string, field: keyof Item, value: string | number) {
     setItems(prev => prev.map(item => {
@@ -91,8 +78,29 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
 
   async function handleSubmit() {
     const validItems = items.filter(i => i.description.trim())
+    
+    // Validation descriptions
     if (validItems.length === 0) {
-      setError('Ajoutez au moins une ligne avec une description')
+      setError('Veuillez ajouter au moins une ligne avec une description pour continuer')
+      return
+    }
+    
+    // Validation quantités et prix
+    const invalidItems = validItems.filter(item => 
+      item.quantity <= 0 || 
+      item.unit_price < 0 || 
+      isNaN(item.quantity) || 
+      isNaN(item.unit_price)
+    )
+    
+    if (invalidItems.length > 0) {
+      setError('Les quantités doivent être supérieures à 0 et les prix ne peuvent être négatifs')
+      return
+    }
+    
+    // Validation TVA
+    if (taxRate < 0 || taxRate > 100) {
+      setError('Le taux de TVA doit être compris entre 0 et 100%')
       return
     }
 
@@ -104,11 +112,21 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.redirect('/login'); return }
 
+      // Sanitization et validation des données avant insertion
+      const sanitizedItems = validItems.map(item => validateAndSanitizeItem(item))
+      const sanitizedTaxRate = validateTaxRate(taxRate)
+      const sanitizedCurrency = validateCurrency(currency)
+      const sanitizedNotes = sanitizeNotes(notes)
+
       const { data: canCreate } = await supabase
         .rpc('check_quota', { p_user_id: user.id, p_type: type } as any)
 
       if (!canCreate) {
-        setError(`Limite de 5 ${label}s/mois atteinte. Passez en Pro pour continuer.`)
+        await alert(
+          'Limite atteinte',
+          `Vous avez atteint votre limite de 5 ${label}s par mois. Passez à l'abonnement Pro pour continuer à créer des ${label}s sans limitation.`,
+          'warning'
+        )
         setLoading(false)
         return
       }
@@ -127,17 +145,24 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
           issue_date: new Date().toISOString().split('T')[0],
           due_date: dueDate || null,
           subtotal,
-          tax_rate: taxRate,
-          tax_amount: taxAmount,
+          tax_rate: sanitizedTaxRate,
+          tax_amount: subtotal * (sanitizedTaxRate / 100),
           total,
-          notes: notes.trim() || null,
-          currency,
+          notes: sanitizedNotes,
+          currency: sanitizedCurrency,
         } as any)
         .select()
         .single()
 
       if (insertError || !invoice) {
-        setError(insertError?.message || 'Erreur lors de la création')
+        console.error('Invoice creation error:', insertError)
+        if (insertError?.message?.includes('quota')) {
+          setError('Limite de créations atteinte. Passez au plan Pro pour continuer.')
+        } else if (insertError?.message?.includes('permission')) {
+          setError('Permission refusée. Vérifiez vos droits.')
+        } else {
+          setError('Erreur lors de la création du devis. Veuillez réessayer.')
+        }
         setLoading(false)
         return
       }
@@ -145,18 +170,19 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
       const { error: itemsError } = await supabase
         .from('invoice_items')
         .insert(
-          validItems.map((item, index) => ({
+          sanitizedItems.map((item, index) => ({
             invoice_id: (invoice as any).id,
-            description: item.description.trim(),
-            quantity: Number(item.quantity),
-            unit_price: Number(item.unit_price),
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
             total: item.total,
             position: index,
           })) as any
         )
 
       if (itemsError) {
-        setError(itemsError.message)
+        console.error('Items insertion error:', itemsError)
+        setError('Erreur lors de l\'ajout des lignes. Le devis a été créé mais les lignes n\'ont pas pu être ajoutées.')
         setLoading(false)
         return
       }
@@ -164,7 +190,18 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
       router.redirect(`/${backHref.slice(1)}/${(invoice as any).id}`)
 
     } catch (err) {
-      setError('Erreur inattendue. Réessayez.')
+      console.error('Unexpected error:', err)
+      if (err instanceof Error) {
+        if (err.message.includes('Network')) {
+          setError('Erreur réseau. Vérifiez votre connexion et réessayez.')
+        } else if (err.message.includes('timeout')) {
+          setError('Délai d\'attente dépassé. Veuillez réessayer.')
+        } else {
+          setError('Erreur inattendue. Si le problème persiste, contactez le support.')
+        }
+      } else {
+        setError('Erreur inattendue. Réessayez.')
+      }
       setLoading(false)
     }
   }
@@ -173,11 +210,11 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
     <main className="max-w-2xl mx-auto pb-24 sm:pb-8">
 
       {/* Header premium */}
-      <section className="rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 shadow-sm sm:p-6 mb-6">
+      <section className="rounded-3xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 shadow-sm sm:p-6 mb-6">
         <div className="flex items-center gap-4">
           <Link
             href={backHref}
-            className="p-2.5 hover:bg-indigo-100 rounded-xl transition-all duration-200 text-slate-500 hover:text-indigo-600 group"
+            className="p-2.5 hover:bg-indigo-100 rounded-2xl transition-all duration-200 text-slate-500 hover:text-indigo-600 group"
           >
             <ArrowLeft size={20} className="group-hover:scale-110 transition-transform" />
           </Link>
@@ -194,7 +231,7 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
       <div className="space-y-6">
 
         {/* ── Bloc 1 : Infos générales ── */}
-        <section className="bg-white rounded-2xl border border-indigo-200/50 p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-indigo-200/50 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full"></div>
             <h2 className="font-semibold text-slate-900 text-lg">Informations générales</h2>
@@ -202,53 +239,50 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Client
+              <label 
+                htmlFor="client-search"
+                className="block text-sm font-semibold text-slate-700 mb-1.5"
+              >
+                Client <span className="text-red-500">*</span>
               </label>
-              <select
-                value={selectedClient}
-                onChange={e => setSelectedClient(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                           transition-all bg-gradient-to-b from-white to-slate-50"
-              >
-                <option value="">Sélectionner un client (optionnel)</option>
-                {clients.map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}{client.company ? ` — ${client.company}` : ''}
-                  </option>
-                ))}
-              </select>
-              <Link
-                href="/clients/nouveau"
-                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1.5 inline-flex items-center gap-1 transition-colors"
-              >
-                <Plus size={12} />
-                Créer un nouveau client
-              </Link>
+              <ClientSearch
+                selectedClient={selectedClient}
+                onClientSelect={setSelectedClient}
+                placeholder="Rechercher un client par nom, entreprise, email..."
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                <label 
+                  htmlFor="due-date"
+                  className="block text-sm font-semibold text-slate-700 mb-1.5"
+                >
                   Date d&apos;échéance
                 </label>
                 <input
+                  id="due-date"
                   type="date"
                   value={dueDate}
                   onChange={e => setDueDate(e.target.value)}
+                  aria-label="Date d'échéance de la facture"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900
                              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                              transition-all bg-gradient-to-b from-white to-slate-50"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                <label 
+                  htmlFor="currency-select"
+                  className="block text-sm font-semibold text-slate-700 mb-1.5"
+                >
                   Devise
                 </label>
                 <select
+                  id="currency-select"
                   value={currency}
                   onChange={e => setCurrency(e.target.value)}
+                  aria-label="Devise de la facture"
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900
                              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                              transition-all bg-gradient-to-b from-white to-slate-50"
@@ -263,7 +297,7 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
         </section>
 
         {/* ── Bloc 2 : Lignes ── */}
-        <section className="bg-white rounded-2xl border border-indigo-200/50 p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-indigo-200/50 p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full"></div>
             <h2 className="font-semibold text-slate-900 text-lg">Prestations / Produits</h2>
@@ -281,9 +315,9 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
           {/* Lignes items */}
           <div className="space-y-3">
             {items.map((item, index) => (
-              <div key={item.id} className="grid grid-cols-12 gap-2 items-center group" style={{ animationDelay: `${index * 50}ms` }}>
+              <div key={item.id} className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center group" style={{ animationDelay: `${index * 50}ms` }}>
                 <input
-                  className="col-span-12 sm:col-span-5 px-3 py-2.5 rounded-xl border
+                  className="w-full sm:col-span-5 px-3 py-2.5 rounded-xl border
                              border-slate-200 text-sm text-slate-900 placeholder-slate-400
                              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                              transition-all bg-gradient-to-b from-white to-slate-50 group-hover:shadow-md"
@@ -291,30 +325,38 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
                   value={item.description}
                   onChange={e => updateItem(item.id, 'description', e.target.value)}
                   placeholder="Description de la prestation"
+                  aria-label={`Description de la prestation ${index + 1}`}
+                  required
                 />
                 <input
-                  className="col-span-4 sm:col-span-2 px-3 py-2.5 rounded-xl border
+                  className="w-full sm:col-span-2 px-3 py-2.5 rounded-xl border
                              border-slate-200 text-sm text-center text-slate-900
                              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                              transition-all bg-gradient-to-b from-white to-slate-50 group-hover:shadow-md"
                   type="number"
                   min="1"
+                  step="1"
                   value={item.quantity}
                   onChange={e => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                  aria-label={`Quantité de la prestation ${index + 1}`}
+                  required
                 />
                 <input
-                  className="col-span-5 sm:col-span-3 px-3 py-2.5 rounded-xl border
+                  className="w-full sm:col-span-3 px-3 py-2.5 rounded-xl border
                              border-slate-200 text-sm text-right text-slate-900
                              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
                              transition-all bg-gradient-to-b from-white to-slate-50 group-hover:shadow-md"
                   type="number"
                   min="0"
+                  step="0.01"
                   value={item.unit_price}
                   onChange={e => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
                   placeholder="0"
+                  aria-label={`Prix unitaire de la prestation ${index + 1}`}
+                  required
                 />
-                <div className="col-span-3 sm:col-span-2 flex items-center justify-end gap-2">
-                  <span className="hidden sm:block text-sm font-semibold text-slate-900 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="flex items-center justify-between sm:col-span-2 sm:justify-end sm:gap-2">
+                  <span className="text-sm font-semibold text-slate-900 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                     {formatNum(item.total)}
                   </span>
                   <button
@@ -342,7 +384,7 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
         </section>
 
         {/* ── Bloc 3 : Notes + Totaux ── */}
-        <section className="bg-white rounded-2xl border border-indigo-200/50 p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-indigo-200/50 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-6">
 
             {/* Notes */}
@@ -358,6 +400,7 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Conditions de paiement, coordonnées bancaires..."
                 rows={4}
+                aria-label="Notes supplémentaires pour la facture"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900
                            placeholder-slate-400 focus:outline-none focus:ring-2
                            focus:ring-indigo-500 focus:border-indigo-500 transition-all
@@ -378,8 +421,10 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
                   type="number"
                   min="0"
                   max="100"
+                  step="0.1"
                   value={taxRate}
                   onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
+                  aria-label="Taux de TVA en pourcentage"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200
                              text-slate-900 focus:outline-none focus:ring-2
                              focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm bg-gradient-to-b from-white to-slate-50"
@@ -411,12 +456,26 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
 
         {/* Erreur */}
         {error && (
-          <section className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200/50 text-red-700 text-sm
-                          px-4 py-3 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span>{error}</span>
+          <section 
+            className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200/50 text-red-700 text-sm
+                            px-4 py-3 rounded-3xl shadow-sm animate-pulse" 
+            role="alert" 
+            aria-live="polite"
+            id="invoice-form-error"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <span className="font-medium">{error}</span>
+              </div>
               {error.includes('Limite') && (
-                <Link href="/upgrade" className="underline font-medium text-red-800 hover:text-red-900 transition-colors">
+                <Link 
+                  href="/upgrade" 
+                  className="underline font-medium text-red-800 hover:text-red-900 transition-colors flex-shrink-0"
+                  aria-label="Passer au plan Pro pour débloquer des fonctionnalités"
+                >
                   Passer en Pro
                 </Link>
               )}
@@ -429,28 +488,32 @@ export default function InvoiceForm({ type, defaultClientId }: InvoiceFormProps)
           <Link
             href={backHref}
             className="flex-1 text-center border border-slate-200 text-slate-600
-                       font-semibold py-3 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
+                       font-semibold py-3 rounded-3xl hover:bg-slate-50 transition-all duration-200 group"
           >
             <span className="group-hover:scale-105 inline-block transition-transform">Annuler</span>
           </Link>
           <button
             onClick={handleSubmit}
             disabled={loading}
+            aria-label={`Créer la ${label}`}
             className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed
-                       text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100"
+                       text-white font-semibold py-3 rounded-3xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 disabled:scale-100"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Enregistrement...
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+                Enregistrement en cours...
               </span>
             ) : (
-              <span>Créer le {label}</span>
+              <span>Créer la {label}</span>
             )}
           </button>
         </div>
 
       </div>
+      
+      {/* Premium Modal Component */}
+      <ModalComponent />
     </main>
   )
 }

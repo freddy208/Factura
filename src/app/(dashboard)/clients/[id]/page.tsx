@@ -57,7 +57,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
     .reduce((sum, item) => sum + (item.total ?? 0), 0)
 
   return (
-    <main className="mx-auto max-w-3xl space-y-5 pb-20">
+    <main className="mx-auto max-w-4xl xl:max-w-5xl px-4 sm:px-6 lg:px-8 space-y-5 pb-20">
       {/* Header premium */}
       <PremiumCard variant="elevated" padding="lg" hover={false}>
         <div className="flex items-start justify-between gap-3">
@@ -113,35 +113,35 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
             <Building2 size={12} className="text-white" />
           </div>
-          <h2 className="text-sm font-semibold text-slate-900">Coordonnees</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Coordonnées</h2>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200">
             <Mail size={14} className="mt-0.5 text-slate-400" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">Email</p>
-              <p className="text-sm font-medium text-slate-900 truncate">{client.email || 'Non renseigne'}</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{client.email || 'Non renseigné'}</p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200">
             <Phone size={14} className="mt-0.5 text-slate-400" />
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Telephone</p>
-              <p className="text-sm font-medium text-slate-900 truncate">{client.phone || 'Non renseigne'}</p>
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Téléphone</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{client.phone || 'Non renseigné'}</p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200">
             <Building2 size={14} className="mt-0.5 text-slate-400" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">Entreprise</p>
-              <p className="text-sm font-medium text-slate-900 truncate">{client.company || 'Non renseignee'}</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{client.company || 'Non renseigné'}</p>
             </div>
           </div>
           <div className="flex items-start gap-3 rounded-xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200">
             <MapPin size={14} className="mt-0.5 text-slate-400" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">Adresse</p>
-              <p className="text-sm font-medium text-slate-900 truncate">{client.address || 'Non renseignee'}</p>
+              <p className="text-sm font-medium text-slate-900 truncate">{client.address || 'Non renseigné'}</p>
             </div>
           </div>
         </div>

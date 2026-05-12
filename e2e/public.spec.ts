@@ -15,7 +15,7 @@ test.describe('Pages publiques', () => {
 
   test('/register est accessible', async ({ page }) => {
     await page.goto('/register')
-    await expect(page.getByRole('heading', { name: /Creer votre compte|Créer votre compte/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Créer votre compte/i })).toBeVisible()
   })
 
   test('/offline affiche le mode hors ligne', async ({ page }) => {

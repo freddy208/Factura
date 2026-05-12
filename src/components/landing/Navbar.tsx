@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { X, Menu } from 'lucide-react'
 
 export default function Navbar() {
@@ -41,9 +42,14 @@ export default function Navbar() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                <span className="text-white font-black text-lg">F</span>
-              </div>
+              <Image 
+                src="/icon-192.png" 
+                alt="Logo Factura" 
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-xl transition-transform duration-300 group-hover:scale-110"
+                priority
+              />
               <span className="text-2xl font-black bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
                 Factura
               </span>

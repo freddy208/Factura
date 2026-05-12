@@ -66,7 +66,8 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-4">
             <Image 
               src="/icon-192.png" 
-              alt="Factura Logo" 
+              alt="Factura Logo"
+              aria-label="Créer un compte Factura" 
               width={48}
               height={48}
               className="w-12 h-12 rounded-lg shadow-sm"
@@ -77,13 +78,14 @@ export default async function DashboardPage() {
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                 Bonjour, {greetingName}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                Vue rapide de votre activite. Mobile-first, claire et prete pour votre usage quotidien.
-              </p>
+              <p className="text-slate-600 mb-6 leading-relaxed">Créez votre première fiche client pour démarrer.</p>
+              <ul>
+                <li>Vos données sont modifiables à tout moment.</li>
+              </ul>
             </div>
           </div>
           <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-            PWA Ready
+            Ready
           </span>
         </div>
 

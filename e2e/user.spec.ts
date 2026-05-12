@@ -42,12 +42,12 @@ test.describe('Parcours utilisateur connecté', () => {
     await expect(page).toHaveURL(/\/clients$/)
 
     await page.goto('/factures/nouvelle')
-    await expect(page.getByRole('heading', { name: /Nouveau facture/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Nouvelle facture/i })).toBeVisible()
 
     await page.getByPlaceholder('Description de la prestation').fill(`Prestation E2E ${suffix}`)
     await page.locator('input[type="number"]').nth(1).fill('10000')
 
-    await page.getByRole('button', { name: /Créer le facture/i }).click()
+    await page.getByRole('button', { name: /Créer la facture/i }).click()
 
     await page.waitForURL(/\/factures\/[a-f0-9-]+$/i, { timeout: 45_000 })
     await expect(page.getByRole('button', { name: /Télécharger PDF/i })).toBeVisible()

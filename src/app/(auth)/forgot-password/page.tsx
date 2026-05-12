@@ -1,9 +1,16 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Rate limiting: max 3 tentatives par minute
+const MAX_ATTEMPTS = 3
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
 
 const ds = {
   color: {
@@ -42,6 +49,7 @@ type InputProps = {
   error?: string
   onChange: (value: string) => void
   autoComplete?: string
+  fieldId?: string
 }
 
 function Field({
@@ -52,19 +60,28 @@ function Field({
   error,
   onChange,
   autoComplete,
+  fieldId,
 }: InputProps) {
+  const errorId = fieldId ? `${fieldId}-error` : undefined
+  
   return (
     <div className="space-y-2.5">
-      <label className="block text-sm font-medium" style={{ color: ds.color.textSecondary }}>
+      <label 
+        className="block text-sm font-medium" 
+        style={{ color: ds.color.textSecondary }}
+        htmlFor={fieldId}
+      >
         {label}
       </label>
       <input
+        id={fieldId}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
         aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         className="w-full rounded-xl border px-4 py-3 text-[15px] outline-none transition-colors"
         style={{
           backgroundColor: ds.color.card,
@@ -81,7 +98,12 @@ function Field({
         }}
       />
       {error ? (
-        <p className="text-xs" style={{ color: ds.color.danger }}>
+        <p 
+          id={errorId}
+          className="text-xs" 
+          style={{ color: ds.color.danger }}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -115,12 +137,54 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [attempts, setAttempts] = useState<{ timestamp: number }[]>([])
+  
+  const emailInputRef = useRef<HTMLInputElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
 
-  const emailError = !email.trim() && error ? 'Email requis' : ''
+  // Validation email améliorée
+  const validateEmail = (email: string): string => {
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) return 'Email requis'
+    if (!EMAIL_REGEX.test(trimmedEmail)) return 'Format d\'email invalide'
+    return ''
+  }
+
+  const emailError = validateEmail(email)
+
+  // Rate limiting check
+  const checkRateLimit = (): boolean => {
+    const now = Date.now()
+    const recentAttempts = attempts.filter(attempt => 
+      now - attempt.timestamp < RATE_LIMIT_WINDOW
+    )
+    
+    if (recentAttempts.length >= MAX_ATTEMPTS) {
+      setError('Trop de tentatives. Veuillez réessayer dans 1 minute.')
+      return false
+    }
+    
+    setAttempts(recentAttempts)
+    return true
+  }
+
+  // Focus management pour les erreurs
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus()
+    }
+  }, [error])
 
   const handleResetPassword = useCallback(async () => {
-    if (!email.trim()) {
-      setError('Veuillez saisir votre email.')
+    const validationError = validateEmail(email)
+    if (validationError) {
+      setError(validationError)
+      emailInputRef.current?.focus()
+      return
+    }
+
+    // Rate limiting check
+    if (!checkRateLimit()) {
       return
     }
 
@@ -130,12 +194,17 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient()
-     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
+      })
 
       if (resetError) {
-        setError('Une erreur est survenue. Veuillez vérifier votre email et réessayer.')
+        if (resetError.message?.includes('email')) {
+          setError('Email non trouvé. Veuillez vérifier votre adresse.')
+        } else {
+          setError('Erreur serveur. Veuillez réessayer plus tard.')
+        }
+        setAttempts(prev => [...prev, { timestamp: Date.now() }])
         setLoading(false)
         return
       }
@@ -143,10 +212,11 @@ export default function ForgotPasswordPage() {
       setSuccess(true)
       setLoading(false)
     } catch {
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError('Erreur de connexion. Veuillez réessayer.')
+      setAttempts(prev => [...prev, { timestamp: Date.now() }])
       setLoading(false)
     }
-  }, [email])
+  }, [email, attempts])
 
   if (success) {
     return (
@@ -251,7 +321,7 @@ export default function ForgotPasswordPage() {
                 }}
               >
                 <Image 
-                  src="/icon-512.png" 
+                  src="/icon-192.png" 
                   alt="Factura Logo"
                   width={64}
                   height={64}
@@ -296,16 +366,21 @@ export default function ForgotPasswordPage() {
               placeholder="vous@entreprise.com"
               autoComplete="email"
               error={emailError}
+              fieldId="email-input"
             />
 
             {error ? (
               <div
+                ref={errorRef}
+                tabIndex={-1}
                 className="rounded-xl border px-4 py-3 text-sm"
                 style={{
                   backgroundColor: ds.color.dangerBg,
                   borderColor: '#FECACA',
                   color: ds.color.danger,
                 }}
+                role="alert"
+                aria-live="polite"
               >
                 {error}
               </div>

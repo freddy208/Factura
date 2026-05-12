@@ -29,7 +29,8 @@ export default function InvoiceActions({
       await alert('Erreur', error.message || 'Impossible de mettre à jour le statut.', 'danger')
       return
     }
-    window.location.reload()
+    // Rechargement doux avec mise à jour UI
+    window.location.href = window.location.pathname
   }
 
   async function handleDelete() {

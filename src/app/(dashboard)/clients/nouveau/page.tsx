@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSafeRouter } from '@/hooks/useRouter'
 import { ArrowLeft, User, Building2, Mail, Phone, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { validateName, validateEmail, validatePhone, validateCompany, validateAddress, RateLimiter } from '@/lib/validation'
 import PremiumCard from '@/components/ui/PremiumCard'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumInput from '@/components/ui/PremiumInput'
@@ -17,6 +18,9 @@ type ClientForm = {
   address: string
 }
 
+// Rate limiter global pour la création de clients
+const clientCreationLimiter = new RateLimiter(5, 15 * 60 * 1000) // 5 tentatives par 15 minutes
+
 export default function NouveauClientPage() {
   const router = useSafeRouter()
   const [form, setForm] = useState<ClientForm>({
@@ -27,6 +31,7 @@ export default function NouveauClientPage() {
     address: '',
   })
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   const canSubmit = useMemo(() => form.name.trim().length > 0, [form.name])
@@ -38,44 +43,80 @@ export default function NouveauClientPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!form.name.trim()) {
-      setError('Le nom du client est requis.')
+    // Vider les erreurs précédentes
+    setError('')
+    setFieldErrors({})
+
+    // Rate limiting - vérifier avec l'ID utilisateur ou IP
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      router.redirect('/login')
+      return
+    }
+
+    if (!clientCreationLimiter.isAllowed(user.id)) {
+      const resetTime = clientCreationLimiter.getResetTime(user.id)
+      const remainingTime = resetTime ? Math.ceil((resetTime - Date.now()) / 60000) : 15
+      setError(`Trop de tentatives. Veuillez réessayer dans ${remainingTime} minutes.`)
+      return
+    }
+
+    // Validation des champs
+    const nameValidation = validateName(form.name)
+    if (!nameValidation.isValid) {
+      setFieldErrors(prev => ({ ...prev, name: nameValidation.error || 'Nom invalide' }))
+      return
+    }
+
+    const emailValidation = validateEmail(form.email)
+    if (!emailValidation.isValid) {
+      setFieldErrors(prev => ({ ...prev, email: emailValidation.error || 'Email invalide' }))
+      return
+    }
+
+    const phoneValidation = validatePhone(form.phone)
+    if (!phoneValidation.isValid) {
+      setFieldErrors(prev => ({ ...prev, phone: phoneValidation.error || 'Téléphone invalide' }))
+      return
+    }
+
+    const companyValidation = validateCompany(form.company)
+    if (!companyValidation.isValid) {
+      setFieldErrors(prev => ({ ...prev, company: companyValidation.error || 'Entreprise invalide' }))
+      return
+    }
+
+    const addressValidation = validateAddress(form.address)
+    if (!addressValidation.isValid) {
+      setFieldErrors(prev => ({ ...prev, address: addressValidation.error || 'Adresse invalide' }))
       return
     }
 
     setLoading(true)
-    setError('')
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.redirect('/login')
-        return
-      }
-
       const { error: insertError } = await supabase.from('clients').insert({
         user_id: user.id,
-        name: form.name.trim(),
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
-        company: form.company.trim() || null,
-        address: form.address.trim() || null,
+        name: nameValidation.sanitized,
+        email: emailValidation.sanitized || null,
+        phone: phoneValidation.sanitized || null,
+        company: companyValidation.sanitized || null,
+        address: addressValidation.sanitized || null,
       } as any)
 
       if (insertError) {
-        setError(insertError.message)
+        setError('Erreur lors de la création du client. Veuillez réessayer.')
         setLoading(false)
         return
       }
 
       router.push('/clients')
       router.refresh()
-    } catch {
-      setError('Erreur inattendue. Veuillez reessayer.')
+    } catch (error) {
+      console.error('Erreur inattendue:', error)
+      setError('Erreur inattendue. Veuillez réessayer.')
       setLoading(false)
     }
   }
@@ -114,6 +155,7 @@ export default function NouveauClientPage() {
               onChange={(value) => setField('name', value)}
               placeholder="Jean Dupont"
               required
+              error={fieldErrors.name}
             />
           </div>
 
@@ -127,6 +169,7 @@ export default function NouveauClientPage() {
                 value={form.company}
                 onChange={(value) => setField('company', value)}
                 placeholder="Mon Entreprise"
+                error={fieldErrors.company}
               />
             </div>
             <div className="space-y-2">
@@ -139,6 +182,7 @@ export default function NouveauClientPage() {
                 value={form.email}
                 onChange={(value) => setField('email', value)}
                 placeholder="client@entreprise.com"
+                error={fieldErrors.email}
               />
             </div>
           </div>
@@ -153,6 +197,7 @@ export default function NouveauClientPage() {
                 value={form.phone}
                 onChange={(value) => setField('phone', value)}
                 placeholder="+237 6XX XXX XXX"
+                error={fieldErrors.phone}
               />
             </div>
             <div className="space-y-2">
@@ -164,6 +209,7 @@ export default function NouveauClientPage() {
                 value={form.address}
                 onChange={(value) => setField('address', value)}
                 placeholder="Douala, Cameroun"
+                error={fieldErrors.address}
               />
             </div>
           </div>

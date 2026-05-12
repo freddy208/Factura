@@ -38,12 +38,12 @@ export default async function DevisDetailPage({
   return (
     <main className="space-y-5 pb-24 sm:space-y-6 sm:pb-8">
       {/* Header premium */}
-      <section className="rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 shadow-sm sm:p-6">
+      <section className="rounded-3xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 shadow-sm sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
               href="/devis"
-              className="tap-target p-2.5 hover:bg-indigo-100 rounded-xl transition-all duration-200 text-slate-500 hover:text-indigo-600 group"
+              className="tap-target p-2.5 hover:bg-indigo-100 rounded-2xl transition-all duration-200 text-slate-500 hover:text-indigo-600 group"
             >
               <ArrowLeft size={20} className="group-hover:scale-110 transition-transform" />
             </Link>
@@ -64,13 +64,13 @@ export default async function DevisDetailPage({
       </section>
 
       {/* Actions */}
-      <section className="rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-white to-indigo-50 p-4 shadow-sm">
+      <section className="rounded-3xl border border-indigo-200/50 bg-gradient-to-br from-white to-indigo-50 p-4 shadow-sm">
         <InvoiceActions invoice={invoice} profile={profile} isPro={isPro} />
       </section>
 
       {/* Watermark notice plan free */}
       {!isPro && (
-        <section className="rounded-2xl border border-amber-200/50 bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 p-4 shadow-sm">
+        <section className="rounded-3xl border border-amber-200/50 bg-gradient-to-r from-amber-50 via-orange-50 to-yellow-50 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full animate-pulse"></div>
@@ -85,7 +85,7 @@ export default async function DevisDetailPage({
             </div>
             <Link
               href="/upgrade"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
             >
               Passer en Pro
             </Link>
@@ -94,13 +94,13 @@ export default async function DevisDetailPage({
       )}
 
       {/* Carte devis */}
-      <section className="overflow-hidden rounded-2xl border border-indigo-200/50 bg-white shadow-lg">
+      <section className="overflow-hidden rounded-3xl border border-indigo-200/50 bg-white shadow-lg">
         {/* Header premium */}
         <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 px-6 py-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
           <div className="relative flex items-start justify-between gap-4">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-3 py-1.5 mb-3 shadow-lg">
+              <div className="inline-flex items-center gap-2 rounded-2xl bg-white/20 backdrop-blur-sm px-3 py-1.5 mb-3 shadow-lg">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 <p className="text-indigo-100 text-sm font-semibold">
                   DEVIS
@@ -248,7 +248,7 @@ export default async function DevisDetailPage({
                 Notes
               </p>
             </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
               <p className="text-sm text-slate-600 leading-relaxed">{invoice.notes}</p>
             </div>
           </div>

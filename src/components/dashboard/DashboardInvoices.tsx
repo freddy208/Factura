@@ -23,7 +23,7 @@ export default function DashboardInvoices({ invoiceList }: DashboardInvoicesProp
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200/50 bg-gradient-to-br from-slate-50 to-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100/50 px-4 py-3.5 sm:px-5">
-        <h2 className="text-sm font-semibold text-slate-900 sm:text-base">Dernieres factures</h2>
+        <h2 className="text-sm font-semibold text-slate-900 sm:text-base">Dernières factures</h2>
         <Link href="/factures" className="text-xs font-semibold text-blue-600 hover:underline sm:text-sm">
           Voir tout
         </Link>
@@ -34,7 +34,7 @@ export default function DashboardInvoices({ invoiceList }: DashboardInvoicesProp
           <Receipt size={32} className="mx-auto text-slate-300" />
           <p className="mt-3 text-sm text-slate-500">Aucune facture pour le moment.</p>
           <Link href="/factures/nouvelle" className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:underline">
-            Creer votre premiere facture
+            Créer votre première facture
           </Link>
         </div>
       ) : (
@@ -46,7 +46,7 @@ export default function DashboardInvoices({ invoiceList }: DashboardInvoicesProp
               className="flex items-center justify-between gap-3 px-4 py-3.5 transition-all duration-200 hover:bg-slate-50/50 sm:px-5"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-900">{invoice.number || 'Facture sans numero'}</p>
+                <p className="truncate text-sm font-semibold text-slate-900">{invoice.number || 'Facture sans numéro'}</p>
                 <p className="mt-0.5 truncate text-xs text-slate-500">
                   {invoice.clients?.name || 'Sans client'} · {formatDate(invoice.created_at)}
                 </p>

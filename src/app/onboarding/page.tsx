@@ -4,16 +4,31 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const validatePhone = (phone: string): boolean => {
+  const cleanedPhone = phone.trim()
+  if (!cleanedPhone) return true // Optional field
+  
+  // Cameroun phone format: +237 6XX XXX XXX or 6XX XXX XXX
+  const phoneRegex = /^(\+237\s?)?6[0-9]{2}\s?[0-9]{3}\s?[0-9]{3}$/
+  return phoneRegex.test(cleanedPhone)
+}
+
+const validateAddress = (address: string): boolean => {
+  const cleanedAddress = address.trim()
+  if (!cleanedAddress) return true // Optional field
+  return cleanedAddress.length >= 5
+}
+
 const companyTypes = [
   {
     value: 'freelance',
     label: 'Freelance',
-    description: 'Simple, rapide, parfait pour une activite en solo.',
+    description: 'Simple, rapide, parfait pour une activité en solo.',
   },
   {
     value: 'pme',
     label: 'PME',
-    description: 'Un cadre clair pour vos clients et votre equipe.',
+    description: 'Un cadre clair pour vos clients et votre équipe.',
   },
   {
     value: 'agence',
@@ -35,6 +50,8 @@ const ds = {
     success: '#22C55E',
     danger: '#DC2626',
     dangerBg: '#FEF2F2',
+    primaryLight: '#EFF6FF',
+    primaryBorder: '#BFDBFE',
   },
   shadow: {
     soft: '0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.06)',
@@ -54,17 +71,17 @@ type FormState = {
 }
 
 function stepText(step: Step) {
-  return step === 1 ? 'Identite de votre activite' : 'Coordonnees de facturation'
+  return step === 1 ? 'Identité de votre activité' : 'Coordonnées de facturation'
 }
 
 function Stepper({ step }: { step: Step }) {
   return (
-    <div className="mb-6">
+    <div className="mb-6" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={2} aria-label={`Étape ${step} sur 2: ${stepText(step)}`}>
       <div className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide">
-        <span style={{ color: ds.color.textMuted }}>Etape {step} / 2</span>
+        <span style={{ color: ds.color.textMuted }}>Étape {step} / 2</span>
         <span style={{ color: ds.color.primary }}>{stepText(step)}</span>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2" aria-hidden="true">
         {[1, 2].map((item) => (
           <div
             key={item}
@@ -88,12 +105,12 @@ function FacturePreview({ form }: { form: FormState }) {
     <div
       className="rounded-2xl border p-4 transition-all duration-300"
       style={{
-        borderColor: '#BFDBFE',
-        background: 'linear-gradient(145deg, rgba(37,99,235,0.08) 0%, rgba(99,102,241,0.10) 100%)',
+        borderColor: ds.color.primaryBorder,
+        background: `linear-gradient(145deg, ${ds.color.primary}08 0%, ${ds.color.indigo}10 100%)`,
       }}
     >
       <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: ds.color.primary }}>
-        Apercu de votre premiere facture
+        Aperçu de votre première facture
       </p>
 
       <div className="mt-3 rounded-xl border bg-white p-4" style={{ borderColor: ds.color.border, boxShadow: ds.shadow.soft }}>
@@ -152,30 +169,45 @@ type InputProps = {
   placeholder: string
   type?: string
   onChange: (value: string) => void
+  error?: string
+  id: string
 }
 
-function InputField({ label, value, placeholder, type = 'text', onChange }: InputProps) {
+function InputField({ label, value, placeholder, type = 'text', onChange, error, id }: InputProps) {
+  const errorId = `${id}-error`
+  
   return (
     <div className="space-y-2">
-      <label className="block text-[13px] font-medium" style={{ color: ds.color.textSecondary }}>
+      <label htmlFor={id} className="block text-[13px] font-medium" style={{ color: ds.color.textSecondary }}>
         {label}
       </label>
       <input
+        id={id}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         className="w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition-all sm:text-[15px]"
-        style={{ borderColor: ds.color.border, color: ds.color.textPrimary }}
+        style={{ 
+          borderColor: error ? ds.color.danger : ds.color.border, 
+          color: ds.color.textPrimary 
+        }}
         onFocus={(event) => {
           event.currentTarget.style.borderColor = ds.color.primary
           event.currentTarget.style.boxShadow = ds.shadow.focus
         }}
         onBlur={(event) => {
-          event.currentTarget.style.borderColor = ds.color.border
+          event.currentTarget.style.borderColor = error ? ds.color.danger : ds.color.border
           event.currentTarget.style.boxShadow = 'none'
         }}
       />
+      {error && (
+        <p id={errorId} className="text-[12px] font-medium" style={{ color: ds.color.danger }} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
@@ -187,7 +219,9 @@ export default function OnboardingPage() {
     phone: '',
     address: '',
   })
+  const [formErrors, setFormErrors] = useState<Partial<FormState>>({})
   const [loading, setLoading] = useState(false)
+  const [stepLoading, setStepLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
 
@@ -199,10 +233,47 @@ export default function OnboardingPage() {
 
   const updateForm = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+    
+    // Clear field error when user starts typing
+    if (formErrors[key]) {
+      setFormErrors(prev => ({ ...prev, [key]: undefined }))
+    }
+    
+    // Validate field on blur
+    if (key === 'phone' && value) {
+      const isValid = validatePhone(value)
+      if (!isValid) {
+        setFormErrors(prev => ({ ...prev, phone: 'Format de téléphone invalide' }))
+      }
+    }
+    
+    if (key === 'address' && value) {
+      const isValid = validateAddress(value)
+      if (!isValid) {
+        setFormErrors(prev => ({ ...prev, address: 'L\'adresse doit contenir au moins 5 caractères' }))
+      }
+    }
   }
 
   async function handleFinish() {
     setError('')
+    
+    // Validate all fields
+    const errors: Partial<FormState> = {}
+    
+    if (form.phone && !validatePhone(form.phone)) {
+      errors.phone = 'Format de téléphone invalide'
+    }
+    
+    if (form.address && !validateAddress(form.address)) {
+      errors.address = 'L\'adresse doit contenir au moins 5 caractères'
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+    
     setLoading(true)
 
     try {
@@ -254,7 +325,7 @@ export default function OnboardingPage() {
             Construisons votre espace de facturation
           </h1>
           <p className="mx-auto mt-2 max-w-2xl text-[13px] leading-relaxed sm:text-sm" style={{ color: ds.color.textMuted }}>
-            Quelques informations simples pour une interface claire, credible et prete a envoyer votre premiere facture.
+            Quelques informations simples pour une interface claire, crédible et prête à envoyer votre première facture.
           </p>
         </header>
 
@@ -282,11 +353,13 @@ export default function OnboardingPage() {
                         key={item.value}
                         type="button"
                         onClick={() => updateForm('company_type', item.value)}
+                        aria-pressed={selected}
+                        aria-label={`Sélectionner ${item.label}: ${item.description}`}
                         className="w-full rounded-xl border p-3.5 text-left transition-all duration-200 active:scale-[0.99] sm:p-4"
                         style={{
                           borderColor: selected ? ds.color.primary : ds.color.border,
-                          backgroundColor: selected ? '#EFF6FF' : ds.color.card,
-                          boxShadow: selected ? '0 0 0 1px rgba(37,99,235,0.15)' : 'none',
+                          backgroundColor: selected ? ds.color.primaryLight : ds.color.card,
+                          boxShadow: selected ? `0 0 0 1px ${ds.color.primary}15` : 'none',
                           animation: `cardIn 260ms ease-out ${index * 60}ms both`,
                         }}
                       >
@@ -303,24 +376,38 @@ export default function OnboardingPage() {
 
                 <button
                   type="button"
-                  disabled={!canContinue}
-                  onClick={() => setStep(2)}
+                  disabled={!canContinue || stepLoading}
+                  onClick={() => {
+                    setStepLoading(true)
+                    setTimeout(() => {
+                      setStep(2)
+                      setStepLoading(false)
+                    }, 300)
+                  }}
                   className="mt-6 w-full rounded-xl px-4 py-3.5 text-[13px] font-semibold text-white transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
                   style={{ background: `linear-gradient(90deg, ${ds.color.primary} 0%, ${ds.color.indigo} 100%)` }}
                 >
-                  Continuer
+                  {stepLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-30" />
+                        <path d="M4 12a8 8 0 018-8V1C5.925 1 1 5.925 1 12h3z" fill="currentColor" />
+                      </svg>
+                      Chargement...
+                    </span>
+                  ) : 'Continuer'}
                 </button>
               </div>
             ) : (
               <div className="motion-enter">
                 <h2 className="text-xl font-semibold sm:text-2xl" style={{ color: ds.color.textPrimary }}>
-                  Vos coordonnees professionnelles
+                  Vos coordonnées professionnelles
                 </h2>
                 <p className="mt-2 text-[13px] leading-relaxed sm:text-sm" style={{ color: ds.color.textMuted }}>
-                  Ces informations apparaissent sur vos factures pour renforcer votre credibilite.
+                  Ces informations apparaissent sur vos factures pour renforcer votre crédibilité.
                 </p>
 
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium" style={{ borderColor: '#DBEAFE', backgroundColor: '#EFF6FF', color: ds.color.primary }}>
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium" style={{ borderColor: ds.color.primaryBorder, backgroundColor: ds.color.primaryLight, color: ds.color.primary }}>
                   <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: ds.color.success }} />
                   Profil actif: {selectedTypeLabel}
                 </div>
@@ -332,12 +419,16 @@ export default function OnboardingPage() {
                     onChange={(value) => updateForm('phone', value)}
                     placeholder="+237 6XX XXX XXX"
                     type="tel"
+                    id="phone-input"
+                    error={formErrors.phone || (form.phone && !validatePhone(form.phone) ? 'Format de téléphone invalide' : undefined)}
                   />
                   <InputField
                     label="Adresse (optionnel)"
                     value={form.address}
                     onChange={(value) => updateForm('address', value)}
                     placeholder="Douala, Cameroun"
+                    id="address-input"
+                    error={formErrors.address || (form.address && form.address.length < 5 ? 'L\'adresse doit contenir au moins 5 caractères' : undefined)}
                   />
                 </div>
 
@@ -345,6 +436,8 @@ export default function OnboardingPage() {
                   <div
                     className="mt-5 rounded-xl border px-4 py-3 text-sm"
                     style={{ backgroundColor: ds.color.dangerBg, borderColor: '#FECACA', color: ds.color.danger }}
+                    role="alert"
+                    aria-live="polite"
                   >
                     {error}
                   </div>
@@ -353,11 +446,25 @@ export default function OnboardingPage() {
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
-                    className="w-full rounded-xl border px-4 py-3.5 text-[13px] font-medium transition-all duration-200 active:scale-[0.99] sm:w-1/2 sm:text-sm"
+                    onClick={() => {
+                      setStepLoading(true)
+                      setTimeout(() => {
+                        setStep(1)
+                        setStepLoading(false)
+                      }, 300)
+                    }}
+                    disabled={stepLoading}
+                    className="w-full rounded-xl border px-4 py-3.5 text-[13px] font-medium transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-1/2 sm:text-sm"
                     style={{ borderColor: ds.color.border, color: ds.color.textSecondary }}
                   >
-                    Retour
+                    {stepLoading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-30" />
+                          <path d="M4 12a8 8 0 018-8V1C5.925 1 1 5.925 1 12h3z" fill="currentColor" />
+                        </svg>
+                      </span>
+                    ) : 'Retour'}
                   </button>
                   <button
                     type="button"
@@ -389,9 +496,9 @@ export default function OnboardingPage() {
                 Confiance et rapidite
               </p>
               <ul className="mt-3 space-y-2 text-xs leading-relaxed" style={{ color: ds.color.textSecondary }}>
-                <li>- Interface optimisee mobile et internet faible.</li>
-                <li>- Vos donnees sont modifiables a tout moment.</li>
-                <li>- Votre dashboard est pret juste apres cette etape.</li>
+                <li>- Interface optimisée mobile et internet faible.</li>
+                <li>- Vos données sont modifiables à tout moment.</li>
+                <li>- Votre dashboard est prêt juste après cette étape.</li>
               </ul>
             </div>
           </aside>

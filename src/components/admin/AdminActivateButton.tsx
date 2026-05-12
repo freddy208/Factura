@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Zap, Shield, Check } from 'lucide-react'
 import { usePremiumModal } from '@/hooks/usePremiumModal'
 
@@ -11,7 +11,7 @@ type Props = {
   compact?: boolean
 }
 
-export default function AdminActivateButton({
+export function AdminActivateButton({
   userId,
   requestId,
   userEmail,
@@ -20,6 +20,22 @@ export default function AdminActivateButton({
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const { confirm, alert, setLoading: setModalLoading, ModalComponent } = usePremiumModal()
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // Gestion du focus clavier
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        if (document.activeElement === buttonRef.current && !loading && !done) {
+          event.preventDefault()
+          handleActivate()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [loading, done])
 
   async function handleActivate() {
     const confirmed = await confirm(
@@ -80,15 +96,41 @@ export default function AdminActivateButton({
       <>
         <ModalComponent />
         <button
+          ref={buttonRef}
           onClick={handleActivate}
           disabled={loading}
-          className="tap-target inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-3 py-1.5 rounded-xl transition-all text-xs shadow-sm"
+          className="tap-target inline-flex items-center gap-1.5 font-semibold px-3 py-1.5 rounded-xl transition-all text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          style={{
+            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+            color: 'white',
+            opacity: loading ? 0.6 : 1,
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
+            }
+          }}
+          aria-label={`Activer le plan Pro pour ${userEmail}`}
+          aria-describedby={loading ? 'activation-loading' : undefined}
+          aria-busy={loading}
+          role="button"
+          tabIndex={0}
         >
           {loading ? (
-            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <>
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+              <span id="activation-loading" className="sr-only">Activation en cours...</span>
+              <span aria-hidden="true">...</span>
+            </>
           ) : (
             <>
-              <Zap size={12} />
+              <Zap size={12} aria-hidden="true" />
               <span>Activer Pro</span>
             </>
           )}
@@ -101,19 +143,47 @@ export default function AdminActivateButton({
     <>
       <ModalComponent />
       <button
+        ref={buttonRef}
         onClick={handleActivate}
         disabled={loading}
-        className="tap-target group inline-flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-4 py-2.5 rounded-xl transition-all text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5"
+        className="tap-target group inline-flex items-center gap-2.5 font-semibold px-4 py-2.5 rounded-xl transition-all text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        style={{
+          background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+          color: 'white',
+          opacity: loading ? 0.6 : 1,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transform: loading ? 'none' : ''
+        }}
+        onMouseEnter={(e) => {
+          if (!loading) {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04)'
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!loading) {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06)'
+          }
+        }}
+        aria-label={`Activer le plan Pro pour ${userEmail}`}
+        aria-describedby={loading ? 'activation-loading-full' : undefined}
+        aria-busy={loading}
+        role="button"
+        tabIndex={0}
       >
         {loading ? (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+            <span id="activation-loading-full" className="sr-only">Activation du plan Pro en cours...</span>
             <span>Activation...</span>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-1.5 bg-white/20 px-2 py-1 rounded-lg">
-              <Shield size={14} className="text-white" />
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{backgroundColor: 'rgba(255, 255, 255, 0.2)'}} aria-hidden="true">
+              <Shield size={14} style={{color: 'white'}} />
               <Zap size={14} />
             </div>
             <span>Activer le plan Pro</span>

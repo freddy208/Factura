@@ -251,14 +251,23 @@ export const premiumAlert = (title: string, message: string, type: ModalType = '
           title={title}
           message={message}
           type={type}
-          onConfirm={() => setIsOpen(false)}
+          onConfirm={() => {
+            if (type === 'warning') {
+              // Redirect to upgrade page for limit warnings
+              window.location.href = '/upgrade'
+            } else {
+              setIsOpen(false)
+            }
+          }}
         />
       )
     }
     
-    // This would need to be rendered properly in a real app
-    // For now, we'll use a simpler approach
-    resolve(true)
+    // Render the modal using React
+    import('react-dom/client').then(({ createRoot }) => {
+      const root = createRoot(modalContainer)
+      root.render(<ModalComponent />)
+    })
   })
 }
 

@@ -228,3 +228,43 @@ export async function welcomeEmailUserRateLimit(userId: string): Promise<boolean
     return true
   }
 }
+
+/** Limite les actions de notification par utilisateur (marquer lu/non lu, etc.) */
+export async function notificationActionsRateLimit(userId: string): Promise<boolean> {
+  const redis = getRedis()
+  if (!redis) return true
+  
+  try {
+    const ratelimitNotifications = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '60 s'), // 30 actions par minute
+      prefix: 'factura:rl:notifications',
+    })
+    const { success } = await ratelimitNotifications.limit(userId)
+    return success
+  } catch (error) {
+    // Fallback vers rate limiting en mémoire si Upstash a des permissions insuffisantes
+    console.warn('Upstash notification rate limit failed, using memory fallback:', error)
+    const now = Date.now()
+    const key = `notifications:${userId}`
+    const windowMs = 60 * 1000 // 1 minute
+    const maxRequests = 30
+    
+    const record = rateLimitMemory.get(key)
+    
+    if (!record || now > record.resetTime) {
+      rateLimitMemory.set(key, {
+        count: 1,
+        resetTime: now + windowMs,
+      })
+      return true
+    }
+    
+    if (record.count >= maxRequests) {
+      return false
+    }
+    
+    record.count++
+    return true
+  }
+}

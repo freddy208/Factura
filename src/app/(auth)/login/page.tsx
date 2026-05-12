@@ -156,19 +156,24 @@ function PrimaryButton({ loading }: { loading: boolean }) {
   )
 }
 
-function GoogleButton({ loading }: { loading: boolean }) {
+function GoogleButton({ loading, onError }: { loading: boolean; onError: (error: string) => void }) {
   return (
     <button
       type="button"
       disabled={loading}
-      onClick={() => {
-        const supabase = createClient()
-        supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`
-          }
-        })
+      onClick={async () => {
+        try {
+          const supabase = createClient()
+          await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: `${window.location.origin}/auth/callback`
+            }
+          })
+        } catch (error) {
+          console.error('Google OAuth error:', error)
+          onError('Erreur lors de la connexion avec Google.')
+        }
       }}
       className="w-full rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-3"
       style={{
@@ -239,8 +244,10 @@ export default function LoginPage() {
 
       const profile = profileData as { onboarding_done: boolean } | null
       router.redirect(profile && !profile.onboarding_done ? '/onboarding' : '/dashboard')
-    } catch {
-      setError('Une erreur est survenue. Veuillez reessayer.')
+    } catch (error) {
+      console.error('Login error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      setError(`Une erreur est survenue: ${errorMessage}`)
       setLoading(false)
     }
   }, [email, password])
@@ -264,7 +271,7 @@ export default function LoginPage() {
                 }}
               >
                 <Image 
-                  src="/icon-512.png" 
+                  src="/icon-192.png" 
                   alt="Factura Logo"
                   width={64}
                   height={64}
@@ -358,7 +365,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <GoogleButton loading={loading} />
+          <GoogleButton loading={loading} onError={setError} />
         </section>
 
         <footer className="mt-6 space-y-3 text-center">
@@ -370,11 +377,11 @@ export default function LoginPage() {
           <p className="text-sm" style={{ color: ds.color.textMuted }}>
             Pas encore de compte ?{' '}
             <Link href="/register" className="font-medium" style={{ color: ds.color.primary }}>
-              Creer un compte
+              Créer un compte
             </Link>
           </p>
           <p className="text-xs" style={{ color: ds.color.textMuted }}>
-            Securise, rapide, concu pour les pros.
+            Sécurisé, rapide, conçu pour les pros.
           </p>
         </footer>
       </div>

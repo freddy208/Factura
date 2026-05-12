@@ -44,7 +44,7 @@ export default async function ClientsPage() {
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Vos clients</h1>
             <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-              Base client claire et prete pour une facturation rapide.
+              Base client claire et prête pour une facturation rapide.
             </p>
           </div>
           <PremiumButton
@@ -104,7 +104,7 @@ export default async function ClientsPage() {
             <Users size={32} className="text-slate-400" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-3">Aucun client pour le moment</h2>
-          <p className="text-slate-600 mb-6 leading-relaxed">Creez votre premiere fiche client pour demarrer.</p>
+          <p className="text-slate-600 mb-6 leading-relaxed">Créez votre première fiche client pour démarrer.</p>
           <PremiumButton
             href="/clients/nouveau"
             variant="primary"

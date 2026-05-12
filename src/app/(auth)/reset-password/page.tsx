@@ -1,25 +1,44 @@
 'use client'
 
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 
+// Password validation requirements
+const PASSWORD_REQUIREMENTS = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumbers: true,
+  requireSpecialChars: true
+}
+
+// Rate limiting: max 3 tentatives par minute
+const MAX_ATTEMPTS = 3
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
+
+// Common weak passwords to block
+const COMMON_PASSWORDS = [
+  'password', '12345678', 'qwerty123', 'admin123', 'password123',
+  '123456789', 'welcome123', 'abc12345', 'password1', '123123123'
+]
+
 const ds = {
   color: {
     bg: '#F8FAFC',
     card: '#FFFFFF',
-    border: '#E2E8F0',
-    borderFocus: '#3B82F6',
+    border: '#E5E7EB',
+    borderFocus: '#2563EB', // Harmonisé avec forgot-password
     textPrimary: '#0F172A',
-    textSecondary: '#1E293B',
+    textSecondary: '#334155',
     textMuted: '#64748B',
     placeholder: '#94A3B8',
-    primary: '#3B82F6',
-    primaryHover: '#2563EB',
-    success: '#10B981',
-    danger: '#EF4444',
+    primary: '#2563EB', // Harmonisé avec forgot-password
+    primaryHover: '#1D4ED8',
+    success: '#22C55E',
+    danger: '#DC2626',
     dangerBg: '#FEF2F2',
     successBg: '#F0FDF4',
   },
@@ -47,6 +66,7 @@ type InputProps = {
   autoComplete?: string
   showPasswordToggle?: boolean
   onPasswordToggle?: () => void
+  fieldId?: string
 }
 
 function Field({
@@ -59,20 +79,29 @@ function Field({
   autoComplete,
   showPasswordToggle,
   onPasswordToggle,
+  fieldId,
 }: InputProps) {
+  const errorId = fieldId ? `${fieldId}-error` : undefined
+  
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold" style={{ color: ds.color.textSecondary }}>
+      <label 
+        className="block text-sm font-semibold" 
+        style={{ color: ds.color.textSecondary }}
+        htmlFor={fieldId}
+      >
         {label}
       </label>
       <div className="relative">
         <input
+          id={fieldId}
           type={type}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
           aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className="w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition-all duration-200 pr-14"
           style={{
             backgroundColor: ds.color.card,
@@ -96,6 +125,7 @@ function Field({
             onClick={onPasswordToggle}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
             style={{ color: ds.color.textMuted }}
+            aria-label={type === 'password' ? 'Afficher le mot de passe' : 'Masquer le mot de passe'}
           >
             {type === 'password' ? (
               <svg
@@ -132,7 +162,12 @@ function Field({
         )}
       </div>
       {error ? (
-        <p className="text-xs" style={{ color: ds.color.danger }}>
+        <p 
+          id={errorId}
+          className="text-xs" 
+          style={{ color: ds.color.danger }}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -170,14 +205,48 @@ function PrimaryButton({ loading, disabled }: { loading: boolean; disabled?: boo
 
 function PasswordStrengthIndicator({ password }: { password: string }) {
   const getStrength = (pwd: string) => {
-    if (!pwd) return { strength: 0, text: '', color: '#E5E7EB' }
+    if (!pwd) return { strength: 0, text: '', color: '#E5E7EB', requirements: [] }
     
+    const requirements = []
     let strength = 0
-    if (pwd.length >= 8) strength++
+    
+    // Longueur
+    if (pwd.length >= PASSWORD_REQUIREMENTS.minLength) {
+      strength++
+    } else {
+      requirements.push(`Au moins ${PASSWORD_REQUIREMENTS.minLength} caractères`)
+    }
+    
+    // Bonus pour longueur supérieure
     if (pwd.length >= 12) strength++
-    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++
-    if (/\d/.test(pwd)) strength++
-    if (/[^a-zA-Z\d]/.test(pwd)) strength++
+    
+    // Majuscules
+    if (PASSWORD_REQUIREMENTS.requireUppercase && /[A-Z]/.test(pwd)) {
+      strength++
+    } else if (PASSWORD_REQUIREMENTS.requireUppercase) {
+      requirements.push('Une majuscule')
+    }
+    
+    // Minuscules
+    if (PASSWORD_REQUIREMENTS.requireLowercase && /[a-z]/.test(pwd)) {
+      strength++
+    } else if (PASSWORD_REQUIREMENTS.requireLowercase) {
+      requirements.push('Une minuscule')
+    }
+    
+    // Chiffres
+    if (PASSWORD_REQUIREMENTS.requireNumbers && /\d/.test(pwd)) {
+      strength++
+    } else if (PASSWORD_REQUIREMENTS.requireNumbers) {
+      requirements.push('Un chiffre')
+    }
+    
+    // Caractères spéciaux
+    if (PASSWORD_REQUIREMENTS.requireSpecialChars && /[^a-zA-Z\d]/.test(pwd)) {
+      strength++
+    } else if (PASSWORD_REQUIREMENTS.requireSpecialChars) {
+      requirements.push('Un caractère spécial')
+    }
 
     const levels = [
       { strength: 0, text: 'Très faible', color: '#DC2626' },
@@ -188,10 +257,10 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
       { strength: 5, text: 'Excellent', color: '#059669' },
     ]
 
-    return levels[Math.min(strength, 4)]
+    return { ...levels[Math.min(strength, 5)], requirements }
   }
 
-  const { strength, text, color } = getStrength(password)
+  const { strength, text, color, requirements } = getStrength(password)
 
   return (
     <div className="space-y-2 animate-fade-in">
@@ -207,9 +276,20 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
           />
         ))}
       </div>
-      <p className="text-xs font-medium transition-all duration-300" style={{ color }}>
-        Force du mot de passe : {text}
-      </p>
+      <div className="space-y-1">
+        <p className="text-xs font-medium transition-all duration-300" style={{ color }}>
+          Force du mot de passe : {text}
+        </p>
+        {requirements.length > 0 && (
+          <div className="space-y-1">
+            {requirements.map((req, index) => (
+              <p key={index} className="text-xs" style={{ color: ds.color.textMuted }}>
+                • {req}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -223,7 +303,83 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isValidToken, setIsValidToken] = useState(true)
+  const [attempts, setAttempts] = useState<{ timestamp: number }[]>([])
   const router = useSafeRouter()
+  
+  const passwordInputRef = useRef<HTMLInputElement>(null)
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+
+  // Validation améliorée du mot de passe
+  const validatePassword = (pwd: string): string => {
+    if (!pwd) return 'Mot de passe requis'
+    
+    const trimmedPwd = pwd.trim()
+    
+    // Vérifier mots de passe communs
+    if (COMMON_PASSWORDS.includes(trimmedPwd.toLowerCase())) {
+      return 'Ce mot de passe est trop courant. Choisissez-en un plus sécurisé.'
+    }
+    
+    // Longueur
+    if (trimmedPwd.length < PASSWORD_REQUIREMENTS.minLength) {
+      return `Le mot de passe doit contenir au moins ${PASSWORD_REQUIREMENTS.minLength} caractères.`
+    }
+    
+    // Majuscule
+    if (PASSWORD_REQUIREMENTS.requireUppercase && !/[A-Z]/.test(trimmedPwd)) {
+      return 'Le mot de passe doit contenir au moins une majuscule.'
+    }
+    
+    // Minuscule
+    if (PASSWORD_REQUIREMENTS.requireLowercase && !/[a-z]/.test(trimmedPwd)) {
+      return 'Le mot de passe doit contenir au moins une minuscule.'
+    }
+    
+    // Chiffres
+    if (PASSWORD_REQUIREMENTS.requireNumbers && !/\d/.test(trimmedPwd)) {
+      return 'Le mot de passe doit contenir au moins un chiffre.'
+    }
+    
+    // Caractères spéciaux
+    if (PASSWORD_REQUIREMENTS.requireSpecialChars && !/[^a-zA-Z\d]/.test(trimmedPwd)) {
+      return 'Le mot de passe doit contenir au moins un caractère spécial.'
+    }
+    
+    return ''
+  }
+
+  const validateConfirmPassword = (pwd: string, confirmPwd: string): string => {
+    if (!confirmPwd) return 'Confirmation requise'
+    if (pwd !== confirmPwd) return 'Les mots de passe ne correspondent pas.'
+    return ''
+  }
+
+  // Rate limiting check
+  const checkRateLimit = (): boolean => {
+    const now = Date.now()
+    const recentAttempts = attempts.filter(attempt => 
+      now - attempt.timestamp < RATE_LIMIT_WINDOW
+    )
+    
+    if (recentAttempts.length >= MAX_ATTEMPTS) {
+      setError('Trop de tentatives. Veuillez réessayer dans 1 minute.')
+      return false
+    }
+    
+    setAttempts(recentAttempts)
+    return true
+  }
+
+  // Focus management pour les erreurs
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.focus()
+    }
+  }, [error])
+
+  const passwordError = validatePassword(password)
+  const confirmPasswordError = validateConfirmPassword(password, confirmPassword)
 
   // Vérifier les paramètres d'erreur dans l'URL
   useEffect(() => {
@@ -238,9 +394,6 @@ export default function ResetPasswordPage() {
       setError('Lien de réinitialisation invalide.')
     }
   }, [])
-
-  const passwordError = !password && error ? 'Mot de passe requis' : ''
-  const confirmPasswordError = !confirmPassword && error ? 'Confirmation requise' : ''
 
   useEffect(() => {
     const checkToken = async () => {
@@ -260,18 +413,23 @@ export default function ResetPasswordPage() {
   }, [])
 
   const handleResetPassword = useCallback(async () => {
-    if (!password || !confirmPassword) {
-      setError('Veuillez saisir et confirmer votre nouveau mot de passe.')
+    const pwdError = validatePassword(password)
+    const confirmPwdError = validateConfirmPassword(password, confirmPassword)
+    
+    if (pwdError) {
+      setError(pwdError)
+      passwordInputRef.current?.focus()
+      return
+    }
+    
+    if (confirmPwdError) {
+      setError(confirmPwdError)
+      confirmPasswordInputRef.current?.focus()
       return
     }
 
-    if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.')
+    // Rate limiting check
+    if (!checkRateLimit()) {
       return
     }
 
@@ -281,11 +439,18 @@ export default function ResetPasswordPage() {
     try {
       const supabase = createClient()
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+        password: password.trim(),
       })
 
       if (updateError) {
-        setError('Une erreur est survenue. Veuillez réessayer.')
+        if (updateError.message?.includes('weak password')) {
+          setError('Ce mot de passe est trop faible. Choisissez-en un plus sécurisé.')
+        } else if (updateError.message?.includes('token')) {
+          setError('La session a expiré. Veuillez demander un nouveau lien.')
+        } else {
+          setError('Erreur serveur. Veuillez réessayer plus tard.')
+        }
+        setAttempts(prev => [...prev, { timestamp: Date.now() }])
         setLoading(false)
         return
       }
@@ -297,10 +462,11 @@ export default function ResetPasswordPage() {
         router.redirect('/login')
       }, 3000)
     } catch {
-      setError('Une erreur est survenue. Veuillez réessayer.')
+      setError('Erreur de connexion. Veuillez réessayer.')
+      setAttempts(prev => [...prev, { timestamp: Date.now() }])
       setLoading(false)
     }
-  }, [password, confirmPassword, router])
+  }, [password, confirmPassword, router, attempts])
 
   if (!isValidToken) {
     return (
@@ -473,7 +639,7 @@ export default function ResetPasswordPage() {
                 }}
               >
                 <Image 
-                  src="/icon-512.png" 
+                  src="/icon-192.png" 
                   alt="Factura Logo"
                   width={64}
                   height={64}
@@ -526,6 +692,7 @@ export default function ResetPasswordPage() {
               error={passwordError}
               showPasswordToggle
               onPasswordToggle={() => setShowPassword(!showPassword)}
+              fieldId="password-input"
             />
 
             {password && (
@@ -542,16 +709,21 @@ export default function ResetPasswordPage() {
               error={confirmPasswordError}
               showPasswordToggle
               onPasswordToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+              fieldId="confirm-password-input"
             />
 
             {error ? (
               <div
+                ref={errorRef}
+                tabIndex={-1}
                 className="rounded-xl border px-4 py-3 text-sm"
                 style={{
                   backgroundColor: ds.color.dangerBg,
                   borderColor: '#FECACA',
                   color: ds.color.danger,
                 }}
+                role="alert"
+                aria-live="polite"
               >
                 {error}
               </div>
@@ -559,7 +731,7 @@ export default function ResetPasswordPage() {
 
             <PrimaryButton 
               loading={loading} 
-              disabled={!password || !confirmPassword || password !== confirmPassword || password.length < 8}
+              disabled={!!passwordError || !!confirmPasswordError || !password || !confirmPassword}
             />
           </form>
         </section>

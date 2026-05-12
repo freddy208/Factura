@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSafeRouter } from '@/hooks/useRouter'
 import { createClient } from '@/lib/supabase/client'
 import { sendWelcomeEmailAction } from '@/app/actions/email'
+import { validateName, validateEmail, validateCompany } from '@/lib/validation'
 
 const ds = {
   color: {
@@ -59,19 +60,28 @@ function Field({
   showPasswordToggle,
   onPasswordToggle,
 }: FieldProps) {
+  const fieldId = label.toLowerCase().replace(/\s+/g, '-')
+  const errorId = error ? `${fieldId}-error` : undefined
+  
   return (
     <div className="space-y-2.5">
-      <label className="block text-sm font-medium" style={{ color: ds.color.textSecondary }}>
+      <label 
+        htmlFor={fieldId}
+        className="block text-sm font-medium" 
+        style={{ color: ds.color.textSecondary }}
+      >
         {label}
       </label>
       <div className="relative">
         <input
+          id={fieldId}
           type={type}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
           aria-invalid={!!error}
+          aria-describedby={errorId}
           className="w-full rounded-xl border px-4 py-3 text-[15px] outline-none transition-colors pr-12"
           style={{
             backgroundColor: ds.color.card,
@@ -91,6 +101,7 @@ function Field({
           <button
             type="button"
             onClick={onPasswordToggle}
+            aria-label={type === 'password' ? 'Afficher le mot de passe' : 'Masquer le mot de passe'}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
             style={{ color: ds.color.textMuted }}
           >
@@ -105,6 +116,7 @@ function Field({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                 <circle cx="12" cy="12" r="3" />
@@ -120,6 +132,7 @@ function Field({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                 <line x1="1" y1="1" x2="23" y2="23" />
@@ -129,7 +142,12 @@ function Field({
         )}
       </div>
       {error ? (
-        <p className="text-xs" style={{ color: ds.color.danger }}>
+        <p 
+          id={errorId}
+          className="text-xs" 
+          style={{ color: ds.color.danger }}
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -151,7 +169,21 @@ function PrimaryButton({ loading }: { loading: boolean }) {
         event.currentTarget.style.backgroundColor = ds.color.primary
       }}
     >
-      {loading ? 'Creation du compte...' : 'Creer mon compte'}
+      {loading ? (
+        <span className="flex items-center justify-center gap-2">
+          <svg 
+            className="animate-spin h-4 w-4" 
+            xmlns="http://www.w3.org/2000/svg" 
+            fill="none" 
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Création du compte...
+        </span>
+      ) : 'Créer mon compte'}
     </button>
   )
 }
@@ -211,36 +243,44 @@ export default function RegisterPage() {
   const router = useSafeRouter()
 
   const fieldErrors = useMemo(() => {
-    if (!error) {
-      return {
-        full_name: '',
-        company_name: '',
-        email: '',
-        password: '',
-      }
-    }
-
+    const nameValidation = validateName(form.full_name)
+    const emailValidation = validateEmail(form.email)
+    const companyValidation = validateCompany(form.company_name)
+    
     return {
-      full_name: form.full_name.trim() ? '' : 'Nom requis',
-      company_name: form.company_name.trim() ? '' : 'Entreprise requise',
-      email: form.email.trim() ? '' : 'Email requis',
-      password: form.password.length >= 8 ? '' : '8 caracteres minimum',
+      full_name: error && !nameValidation.isValid ? nameValidation.error || 'Nom invalide' : '',
+      company_name: error && !companyValidation.isValid ? companyValidation.error || 'Entreprise invalide' : '',
+      email: error && !emailValidation.isValid ? emailValidation.error || 'Email invalide' : '',
+      password: error && form.password.length < 8 ? '8 caractères minimum' : '',
     }
-  }, [error, form.company_name, form.email, form.full_name, form.password])
+  }, [error, form.full_name, form.email, form.company_name, form.password])
 
   const setField = useCallback((key: keyof RegisterForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }, [])
 
   const handleRegister = useCallback(async () => {
-    const fullName = form.full_name.trim()
-    const companyName = form.company_name.trim()
-    const email = form.email.trim()
-
-    if (!fullName || !companyName || !email || form.password.length < 8) {
-      setError('Tous les champs sont requis. Le mot de passe doit contenir 8 caracteres minimum.')
+    // Validation avancée avec sanitization
+    const nameValidation = validateName(form.full_name)
+    const emailValidation = validateEmail(form.email)
+    const companyValidation = validateCompany(form.company_name)
+    
+    if (!nameValidation.isValid || !emailValidation.isValid || !companyValidation.isValid || form.password.length < 8) {
+      const errors = [
+        !nameValidation.isValid && nameValidation.error,
+        !emailValidation.isValid && emailValidation.error,
+        !companyValidation.isValid && companyValidation.error,
+        form.password.length < 8 && 'Le mot de passe doit contenir 8 caractères minimum'
+      ].filter(Boolean)
+      
+      setError(errors.join('. '))
       return
     }
+
+    // Utiliser les valeurs validées et sanitizées
+    const fullName = nameValidation.sanitized
+    const companyName = companyValidation.sanitized
+    const email = emailValidation.sanitized
 
     setLoading(true)
     setError('')
@@ -271,7 +311,7 @@ export default function RegisterPage() {
       })
 
       if (signInError || !signInData.user) {
-        setError(signInError?.message ?? 'Impossible de vous connecter apres inscription.')
+        setError(signInError?.message ?? 'Impossible de vous connecter après inscription.')
         setLoading(false)
         return
       }
@@ -313,27 +353,27 @@ export default function RegisterPage() {
 
   return (
     <main
-      className="min-h-screen px-4 py-8 sm:px-6 sm:py-10"
+      className="min-h-screen px-4 py-6 sm:px-6 sm:py-8 lg:py-10"
       style={{
         backgroundColor: ds.color.bg,
         fontFamily: ds.font.sans,
       }}
     >
       <div className="mx-auto w-full max-w-md">
-        <header className="mb-8 text-center sm:mb-10">
-          <div className="mb-4 inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold tracking-wide">
+        <header className="mb-6 text-center sm:mb-8 lg:mb-10">
+          <div className="mb-3 inline-flex items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-semibold tracking-wide sm:mb-4">
             <span style={{ color: ds.color.primary }}>Factura</span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight" style={{ color: ds.color.textPrimary }}>
-            Creer votre compte
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl" style={{ color: ds.color.textPrimary }}>
+            Créer votre compte
           </h1>
-          <p className="mt-2 text-sm" style={{ color: ds.color.textMuted }}>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: ds.color.textMuted }}>
             Lancez votre espace de facturation en moins de deux minutes.
           </p>
         </header>
 
         <section
-          className="rounded-2xl border p-5 sm:p-7"
+          className="rounded-2xl border p-4 sm:p-5 lg:p-7"
           style={{
             backgroundColor: ds.color.card,
             borderColor: ds.color.border,
@@ -341,11 +381,12 @@ export default function RegisterPage() {
           }}
         >
           <form
-            className="space-y-5"
+            className="space-y-4 sm:space-y-5"
             onSubmit={(event) => {
               event.preventDefault()
               void handleRegister()
             }}
+            noValidate
           >
             <Field
               label="Nom complet"
@@ -387,20 +428,45 @@ export default function RegisterPage() {
               onPasswordToggle={() => setShowPassword(!showPassword)}
             />
 
-            <div className="rounded-xl border px-4 py-3 text-xs" style={{ borderColor: '#DBEAFE', color: ds.color.textMuted }}>
-              Mot de passe recommande: 12 caracteres, lettres et chiffres.
+            <div className="rounded-xl border px-3 py-2.5 text-xs sm:px-4 sm:py-3" style={{ borderColor: '#DBEAFE', color: ds.color.textMuted }}>
+              <div className="flex items-start gap-2">
+                <svg 
+                  className="w-4 h-4 mt-0.5 flex-shrink-0" 
+                  style={{ color: '#3B82F6' }}
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span>
+                  Mot de passe recommandé: 12 caractères, lettres et chiffres.
+                </span>
+              </div>
             </div>
 
             {error ? (
               <div
-                className="rounded-xl border px-4 py-3 text-sm"
+                className="rounded-xl border px-3 py-2.5 text-sm sm:px-4 sm:py-3"
+                role="alert"
+                aria-live="polite"
                 style={{
                   backgroundColor: ds.color.dangerBg,
                   borderColor: '#FECACA',
                   color: ds.color.danger,
                 }}
               >
-                {error}
+                <div className="flex items-start gap-2">
+                  <svg 
+                    className="w-4 h-4 mt-0.5 flex-shrink-0" 
+                    fill="currentColor" 
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{error}</span>
+                </div>
               </div>
             ) : null}
 
@@ -421,15 +487,27 @@ export default function RegisterPage() {
           <GoogleButton loading={loading} />
         </section>
 
-        <footer className="mt-6 space-y-3 text-center">
+        <footer className="mt-6 space-y-3 text-center sm:mt-8">
           <p className="text-sm" style={{ color: ds.color.textMuted }}>
-            Deja un compte ?{' '}
-            <Link href="/login" className="font-medium" style={{ color: ds.color.primary }}>
+            Déjà un compte ?{' '}
+            <Link 
+              href="/login" 
+              className="font-medium hover:underline transition-colors" 
+              style={{ color: ds.color.primary }}
+            >
               Se connecter
             </Link>
           </p>
-          <p className="text-xs" style={{ color: ds.color.textMuted }}>
-            En continuant, vous acceptez les conditions d utilisation de Factura.
+          <p className="text-xs leading-relaxed" style={{ color: ds.color.textMuted }}>
+            En continuant, vous acceptez les{' '}
+            <Link 
+              href="/conditions" 
+              className="underline hover:no-underline transition-colors"
+              style={{ color: ds.color.primary }}
+            >
+              conditions d'utilisation
+            </Link>
+            {' '}de Factura.
           </p>
         </footer>
       </div>

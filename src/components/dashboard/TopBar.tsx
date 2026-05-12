@@ -226,13 +226,13 @@ export default function DashboardTopBar({
             </div>
           )}
 
-          <button
-            type="button"
+          <Link
+            href="/notifications"
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-300/50 text-white/90 transition-colors hover:bg-white/20 hover:text-white"
             aria-label="Notifications"
           >
             <Bell size={16} />
-          </button>
+          </Link>
 
           {/* User Avatar with Dropdown */}
           <div className="relative" ref={userMenuRef}>
